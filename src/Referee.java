@@ -25,7 +25,7 @@ public class Referee<GS extends GameState> {
 		
 	}
 	public void setPlayerStream(InputStream player1,OutputStream p1o,InputStream player2,OutputStream p2o) {
-		pl1=new PlayerListener(player1);pl2=new PlayerListener(player2);
+		pl1=new PlayerListener(player1,0);pl2=new PlayerListener(player2,1);
 		os1=p1o;os2=p2o;
 	}
 	public int getResult() // return 0 for draw ;1 for player 1 win; 2 for player 2 wins
@@ -37,17 +37,20 @@ public class Referee<GS extends GameState> {
 		ll.add(cl);
 	}
 	class PlayerListener implements Runnable {
+		int id;
 		InputStream i;
 		boolean hasResponse=false;
-		PlayerListener(InputStream is) {
+		PlayerListener(InputStream is,int id) {
 			i=is;
+			this.id=id;
 		}
 		public void run() {
 			int len=-1;
 			byte[] buf=new byte[8192];
 			try {
 				while( (len=i.read(buf,0,8192))>0) {
-					
+					String s=new String(buf, 0, len);
+					gs.setPlayerAction(id,s);
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
