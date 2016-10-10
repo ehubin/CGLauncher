@@ -13,6 +13,10 @@ public class Referee<GS extends GameState> {
 	public Referee(GS state) { gs=state;}
 	public void start() {
 		gs.init();
+		play();
+		
+	}
+	public void play() {
 		String st = gs.getStateStr();
 		try {
 			pl1.reset();
@@ -22,8 +26,8 @@ public class Referee<GS extends GameState> {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
 	}
+	
 	public void setPlayerStream(InputStream player1,OutputStream p1o,InputStream player2,OutputStream p2o) {
 		pl1=new PlayerListener(player1,0);pl2=new PlayerListener(player2,1);
 		os1=p1o;os2=p2o;
@@ -50,7 +54,10 @@ public class Referee<GS extends GameState> {
 			try {
 				while( (len=i.read(buf,0,8192))>0) {
 					String s=new String(buf, 0, len);
-					gs.setPlayerAction(id,s);
+					if(gs.setPlayerAction(id,s)) {
+						hasResponse=true;
+						play();
+					}
 				}
 			} catch (IOException e) {
 				e.printStackTrace();

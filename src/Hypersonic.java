@@ -18,8 +18,8 @@ public class Hypersonic implements GameState {
 		return null;
 	}
 	@Override
-	public void setPlayerAction(int id, String s) {
-		// TODO Auto-generated method stub
+	public boolean setPlayerAction(int id, String s) {
+		return true;
 		
 	}
 }
