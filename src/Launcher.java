@@ -13,10 +13,6 @@ public class Launcher {
 		try {
 			final Process p1=player1.start();
 			final Process p2=player2.start();
-			Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-				public void run() {
-					System.out.println( "Shutdown hook ran." );
-			}}));
 			gm.setPlayerStream(	p1.getInputStream(),
 								p1.getOutputStream(),
 								p2.getInputStream(),

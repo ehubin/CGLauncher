@@ -9,7 +9,7 @@ public class player1 {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		System.out.println("player1");
+		System.err.println("player1");
 		}
 	}
 

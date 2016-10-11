@@ -9,6 +9,12 @@ static BooleanBoard Bombs= null,Walls=null,Obstacles=null,rItems=null,bItems=nul
 static int width,height,myx=-1,myy=0,myrange=0;
 static boolean hasBombs=true;
     public static void main(String args[]) {
+    	try {
+			Thread.currentThread().sleep(30);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
         int targetx=0,targety=0;
         @SuppressWarnings("resource")
 		Scanner in = new Scanner(System.in);
@@ -28,7 +34,7 @@ static boolean hasBombs=true;
             for (int y = 0; y < height; y++) {
                 
                 String row = in.nextLine();
-                //System.err.println(row);
+                System.err.println(row);
                 int x=0;
                 for(char c:row.toCharArray()) {
                     if(c!='.') {
