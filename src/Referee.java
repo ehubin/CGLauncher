@@ -13,11 +13,16 @@ public class Referee<GS extends GameState> {
 	public Referee(GS state) { gs=state;}
 	public void start() {
 		gs.init();
+		try{
+			os1.write(gs.getInitStr(0).getBytes());
+			os2.write(gs.getInitStr(1).getBytes());
+		}
+		catch(Exception e) { e.printStackTrace(System.err);}
 		play();
 		
 	}
 	public void play() {
-		String st = gs.getStateStr();
+		String st=gs.getStateStr();
 		try {
 			pl1.reset();
 			os1.write(st.getBytes());
