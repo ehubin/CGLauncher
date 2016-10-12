@@ -15,7 +15,9 @@ public class Referee<GS extends GameState> {
 		gs.init();
 		try{
 			os1.write(gs.getInitStr(0).getBytes());
+			os1.flush();
 			os2.write(gs.getInitStr(1).getBytes());
+			os2.flush();
 		}
 		catch(Exception e) { e.printStackTrace(System.err);}
 		play();
@@ -26,8 +28,10 @@ public class Referee<GS extends GameState> {
 		try {
 			pl1.reset();
 			os1.write(st.getBytes());
+			os1.flush();	
 			pl2.reset();
 			os2.write(st.getBytes());
+			os2.flush();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -36,6 +40,10 @@ public class Referee<GS extends GameState> {
 	public void setPlayerStream(InputStream player1,OutputStream p1o,InputStream player2,OutputStream p2o) {
 		pl1=new PlayerListener(player1,0);pl2=new PlayerListener(player2,1);
 		os1=p1o;os2=p2o;
+		Thread pl1t=new Thread(pl1);
+		pl1t.start();
+		Thread pl2t=new Thread(pl2);
+		pl2t.start();
 	}
 	public int getResult() // return 0 for draw ;1 for player 1 win; 2 for player 2 wins
 	{

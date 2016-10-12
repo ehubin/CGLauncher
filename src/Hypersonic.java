@@ -18,6 +18,8 @@ public class Hypersonic implements GameState {
 	}
 	@Override
 	public void init() {
+		entities.add(Entity.createPlayer(0,0,0));
+		entities.add(Entity.createPlayer(1,10,10));
 	}
 	@Override
 	public String getStateStr() {
@@ -33,6 +35,7 @@ public class Hypersonic implements GameState {
         for (Entity e:entities) {
         	sb.append(e+"\n");
         }
+        //sb.append("\n");
 		return sb.toString();
 	}
 	
@@ -46,7 +49,7 @@ public class Hypersonic implements GameState {
 
 	@Override
 	public String getInitStr(int id) {
-		return width+" "+height+" "+id;
+		return width+" "+height+" "+id+"\n";
 	}
 	
 	public static class Entity {
@@ -56,6 +59,13 @@ public class Hypersonic implements GameState {
 		int y;
 		int param1;
 		int param2;
+		static Entity createPlayer(int id,int x,int y) {
+			Entity res=new Entity();
+			res.type=0; res.owner=id; res.x=x;res.y=y; 
+			res.param1=1; //one bomb initially;
+			res.param2=3; //range=3 initially
+			return res;
+		}
 		public String toString() {return type+" "+owner+" "+x+" "+y+" "+param1+" "+param2;}
 	}
 }
