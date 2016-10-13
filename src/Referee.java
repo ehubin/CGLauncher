@@ -67,11 +67,13 @@ public class Referee<GS extends GameState> {
 			try {
 				while( (len=i.read(buf,0,8192))>0) {
 					String s=new String(buf, 0, len);
+					System.err.println("Action "+(id+1)+"=>"+s);
 					if(gs.setPlayerAction(id,s)) {
 						hasResponse=true;
 						play();
 					}
 				}
+				System.err.println("PLayerListener "+(id+1)+"exited!");
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
