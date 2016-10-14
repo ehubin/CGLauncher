@@ -1,9 +1,14 @@
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.Shape;
+import java.awt.geom.Ellipse2D;
 import java.util.Scanner;
 
 
 
 class UnleashTheGeek implements GameState {
 	State s=null;
+	Action[] a=new Action[4];
 	@Override
 	public int getResult() {
 		// TODO Auto-generated method stub
@@ -32,21 +37,58 @@ class UnleashTheGeek implements GameState {
 	}
 
 	@Override
-	public String getStateStr() {
-		// TODO Auto-generated method stub
-		return null;
+	public String getStateStr(int id) {
+		StringBuffer sb=new StringBuffer();
+		PlayerState p1,p2;
+		if(id==0) {
+			p1=s.p1;p2=s.p2;
+		} else {
+			p1=s.p2;p2=s.p1;
+		}
+		sb.append(p1.flagx+" "+p1.flagy+"\n");
+		sb.append(p2.flagx+" "+p2.flagy+"\n");
+		sb.append(p1.p1+"\n"+p1.p2+"\n"+p2.p1+"\n"+p2.p2+"\n");		
+		//System.err.println("STATE:\n"+sb.toString());
+		return sb.toString();
 	}
 
 	@Override
 	public String getInitStr(int id) {
-		// TODO Auto-generated method stub
-		return null;
+		return "";
 	}
 
 	@Override
-	public boolean setPlayerAction(int id, String s) {
-		// TODO Auto-generated method stub
-		return false;
+	public boolean setPlayerAction(int id, String input) {
+		boolean res=false;
+		try{
+		//System.err.println("new action "+input);
+		PlayerState ps=id==0?s.p1:s.p2;
+		Scanner sc= new Scanner(input);
+		int x=sc.nextInt(),y=sc.nextInt();
+		String str=sc.next();
+		int thrust=str.equals("BOOST") ? 500: Integer.parseInt(str);
+		double angle= Math.atan2(x-ps.p1.x,y-ps.p1.y);
+		Action a1=new Action(angle,thrust);
+		x=sc.nextInt();y=sc.nextInt();
+		str=sc.next();
+		thrust=str.equals("BOOST") ? 500: Integer.parseInt(str);
+		angle= Math.atan2(x-ps.p2.x,y-ps.p2.y);
+		Action a2=new Action(angle,thrust);
+		if(id==0) {
+			a[0]=a1;a[1]=a2;
+			res= a[2]==null?false:true;
+		} else {
+			a[2]=a1;a[3]=a2;
+			res= a[0]==null?false:true;
+		}
+		}
+		catch(Exception e) {
+			System.err.println("Exception <"+input+">");
+		}
+		if(res) { // resolve turn
+			s.simulate(a);
+		}
+		return res;
 	}
 	
 	 static class PlayerState {
@@ -164,19 +206,61 @@ class UnleashTheGeek implements GameState {
 	            hasFlag=p.hasFlag;
 	        }
 	        void move(Action a,State s) {
-	           
+	           Pod save=new Pod(this);
 	           
 	            double vtx=a.thrust*Math.cos(a.angle);
 	            double vty=a.thrust*Math.sin(a.angle);
 	            vx+=vtx;vy+=vty;
-	            x+=vx;y+=vy;
+	            double t=0.0,colT;
+	            while((colT=getWall(t)) >=0) {
+	            	t=colT;
+	            }
+	            x+=vx*(1.0-t);
+            	y+=vy*(1.0-t);
+	        
 	            vx*=0.9;vy*=0.9;
 	            x = Math.rint(x);
 				y = Math.rint(y);
+				if(x<400||x>9600||y<400||y>7600) {
+					System.err.println("Sorti "+this+"\n"+save+"\n"+a);
+				}
 	            vx=(int)vx;vy=(int)vy;
 	        }
+	        double getWall(double t) {
+	        	double smallest=2.0;
+	        	double nx=x+vx*(1.0-t),ny=y+vy*(1.0-t);
+	        	if(x==400 && nx<400) 	{vx=-vx; return t;}
+	        	if(x==9600 && nx>9600) 	{vx=-vx; return t;}
+	        	if ( (y==400 && ny <400) || (y==7600 && ny >7600)) {vy=-vy; return t;}
+	            int best=-1;
+	            double col=get_line_intersection(x,y,nx,ny,400, 400, 9600, 400);
+	            if(col>0 && col <smallest) {smallest=col;best=0;}
+	            col = get_line_intersection(x,y,nx,ny,400, 400, 400, 7600);
+	            if(col>0 && col <smallest) {smallest=col;best=1;}
+	            col = get_line_intersection(x,y,nx,ny,9600, 400, 9600, 7600);
+	            if(col>0 && col <smallest) {smallest=col;best=2;}
+	            col = get_line_intersection(x,y,nx,ny,400, 7600, 9600, 7600);
+	            if(col>0 && col <smallest) {smallest=col;best=3;}
+	            
+	            if(best>=0) {
+	            	x+=vx*(1.0-t)*smallest;y+=vy*(1.0-t)*smallest;
+	            	switch(best) {
+	            		case 0:
+	            		case 3:
+	            			vy=-vy;
+	            			break;
+	            		case 1:
+	            		case 2:
+	            			vx=-vx;
+		            		break;
+	            	}
+	            	System.err.println("Collision"+(t+(1.0-t)*smallest));
+	            	return t+(1.0-t)*smallest;
+	            }
+	            return -1;  
+	        }
 	        public String toString() {
-	            return (int)x+" "+(int)y+" "+(int)vx+" "+(int)vy+" "+hasFlag;
+	            return (int)x+" "+(int)y+" "+(int)vx+" "+(int)vy+" "+(hasFlag?1:0);
 	        }
 	        public boolean equals(Object o) {
 	            Pod p=(Pod)o;
@@ -286,6 +370,7 @@ class UnleashTheGeek implements GameState {
 	    }
 	    
 	    static class Action {
+	    	Action() {};
 	        double angle;
 	        int thrust;
 	        boolean boost=false;
@@ -293,9 +378,62 @@ class UnleashTheGeek implements GameState {
 	        public String toString(Pod p) {
 	            return (int)(p.x+10000*Math.cos(angle))+" "+(int)(p.y+10000*Math.sin(angle))+" "+(thrust==500?"BOOST":thrust);
 	        }
+	        public String toString() {return "Angle="+angle+" ,Thrust="+thrust;}
 	    }
 	    static double dist2(Pod p1,int fx,int fy)  { double x=(p1.x-fx),y=p1.y-fy; return x*x+y*y;}
 	    static double dist2(Pod p1,Pod p2)  { double x=(p1.x-p2.x),y=p1.y-p2.y; return x*x+y*y;}
+
+		@Override
+		public void startTurn() {
+			for(int i=0;i<4;++i) a[i]=null;
+			
+		}
+
+		@Override
+		public void draw(Graphics2D g) {
+			final int rad=400;
+			g.setColor(Color.BLACK);
+			Shape theCircle = new Ellipse2D.Double(s.p1.p1.x-rad,s.p1.p1.y-rad, 2*rad, 2*rad);
+		    g.draw(theCircle);
+		    theCircle = new Ellipse2D.Double(s.p1.p2.x-rad,s.p1.p2.y-rad, 2*rad, 2*rad);
+		    g.draw(theCircle);
+		    g.setColor(Color.RED);
+		    theCircle = new Ellipse2D.Double(s.p2.p1.x-rad,s.p2.p1.y-rad, 2*rad, 2*rad);
+		    g.draw(theCircle);
+		    theCircle = new Ellipse2D.Double(s.p2.p2.x-rad,s.p2.p2.y-rad, 2*rad, 2*rad);
+		    g.draw(theCircle);
+			
+		}
+		static double get_line_intersection(double p0_x, double p0_y, double p1_x, double p1_y, 
+			    double p2_x, double p2_y, double p3_x, double p3_y)
+			{
+			    double s02_x, s02_y, s10_x, s10_y, s32_x, s32_y, s_numer, t_numer, denom, t,res=-1.0;
+			    s10_x = p1_x - p0_x;
+			    s10_y = p1_y - p0_y;
+			    s32_x = p3_x - p2_x;
+			    s32_y = p3_y - p2_y;
+
+			    denom = s10_x * s32_y - s32_x * s10_y;
+			    if (denom == 0)
+			        return res; // Collinear
+			    boolean denomPositive = denom > 0;
+
+			    s02_x = p0_x - p2_x;
+			    s02_y = p0_y - p2_y;
+			    s_numer = s10_x * s02_y - s10_y * s02_x;
+			    if ((s_numer < 0) == denomPositive)
+			        return res; // No collision
+
+			    t_numer = s32_x * s02_y - s32_y * s02_x;
+			    if ((t_numer < 0) == denomPositive)
+			        return res; // No collision
+
+			    if (((s_numer > denom) == denomPositive) || ((t_numer > denom) == denomPositive))
+			        return res; // No collision
+			    // Collision detected
+			    t = t_numer / denom;
+			    return t;
+			}
 
 
 }

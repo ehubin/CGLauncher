@@ -1,3 +1,4 @@
+import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,7 +23,7 @@ public class Hypersonic implements GameState {
 		entities.add(Entity.createPlayer(1,10,10));
 	}
 	@Override
-	public String getStateStr() {
+	public String getStateStr(int id) {
 		StringBuffer sb=new StringBuffer();
         for (int y = 0; y < height; y++) {
         	for(int x=0;x<width;++x) {
@@ -67,5 +68,16 @@ public class Hypersonic implements GameState {
 			return res;
 		}
 		public String toString() {return type+" "+owner+" "+x+" "+y+" "+param1+" "+param2;}
+	}
+
+	@Override
+	public void startTurn() {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void draw(Graphics2D g) {
+		// TODO Auto-generated method stub
+		
 	}
 }

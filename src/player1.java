@@ -6,7 +6,7 @@ import java.math.*;
  * Auto-generated code below aims at helping you parse
  * the standard input according to the problem statement.
  **/
-class Player {
+class player1 {
     static Scanner in = new Scanner(System.in);
     static State current= new State(),future=null;
     
@@ -143,7 +143,6 @@ class Player {
             hasFlag=p.hasFlag;
         }
         void move(Action a,State s) {
-           
            
             double vtx=a.thrust*Math.cos(a.angle);
             double vty=a.thrust*Math.sin(a.angle);
@@ -371,7 +370,7 @@ static List<Action[]> SimulateAllTurns(State initialState)
      }
      
        }
-     System.err.println("Nb Iteration="+count);
+     //System.err.println("Nb Iteration="+count);
 	return poolOfSolutions.get(maxIndex).actions;
     } 
 
@@ -427,7 +426,7 @@ static List<Action[]> generateInitialAction(
 	angle[3]=0;
 	
 	for(int i=0;i<4;++i) {
-	    System.err.println(angle[i]*180/Math.PI);
+	    //System.err.println(angle[i]*180/Math.PI);
 	}
 	
 	

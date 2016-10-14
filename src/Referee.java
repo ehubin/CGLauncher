@@ -24,17 +24,16 @@ public class Referee<GS extends GameState> {
 		
 	}
 	public void play() {
-		String st=gs.getStateStr();
 		try {
-			pl1.reset();
-			os1.write(st.getBytes());
+			gs.startTurn();
+			os1.write(gs.getStateStr(0).getBytes());
 			os1.flush();	
-			pl2.reset();
-			os2.write(st.getBytes());
+			os2.write(gs.getStateStr(1).getBytes());
 			os2.flush();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		for(ChangeListener cl:ll) cl.stateChanged(null);
 	}
 	
 	public void setPlayerStream(InputStream player1,OutputStream p1o,InputStream player2,OutputStream p2o) {
@@ -56,7 +55,6 @@ public class Referee<GS extends GameState> {
 	class PlayerListener implements Runnable {
 		int id;
 		InputStream i;
-		boolean hasResponse=false;
 		PlayerListener(InputStream is,int id) {
 			i=is;
 			this.id=id;
@@ -67,9 +65,8 @@ public class Referee<GS extends GameState> {
 			try {
 				while( (len=i.read(buf,0,8192))>0) {
 					String s=new String(buf, 0, len);
-					System.err.println("Action "+(id+1)+"=>"+s);
+					//System.err.println("Action "+(id+1)+"=>"+s);
 					if(gs.setPlayerAction(id,s)) {
-						hasResponse=true;
 						play();
 					}
 				}
@@ -77,9 +74,6 @@ public class Referee<GS extends GameState> {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-		}
-		public void reset() {
-			hasResponse=false;
 		}
 	}
 }
