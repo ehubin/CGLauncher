@@ -1,6 +1,8 @@
 import java.util.*;
 
 
+
+
 /**
  * Auto-generated code below aims at helping you parse
  * the standard input according to the problem statement.
@@ -53,7 +55,7 @@ class player1 {
                 ChasePod=p1;
             }
             if(FlagPod != null) {
-                res += 2*DIAG-(myBase-FlagPod.x)*(myBase-FlagPod.x);
+            	res += 10 * (DIAG - dist2(FlagPod,myBase, (int)FlagPod.y));
             } else {
                 if(dist2(p1,flagx,flagy) > dist2(p2,flagx,flagy)) {
                     FlagPod=p2; ChasePod=p1;
@@ -94,6 +96,12 @@ class player1 {
         double score() {
             return p1.score(p2)-p2.score(p1);
         }
+		double score(boolean improveAlly) {
+			if (improveAlly)
+				return p1.score(p2) - p2.score(p1);
+			else
+				return p2.score(p1) - p1.score(p2);
+		}
         State() {p1=new PlayerState(); p2=new PlayerState();}
         State(State s)  {p1=new PlayerState(s.p1); p2=new PlayerState(s.p2);}
             
@@ -306,15 +314,615 @@ class player1 {
     }
     
     
-    static class Actions {
-        double score;
-        List<Action[]> actions = null;
-        
+	static class Actions implements Comparable<Actions>{
+		double score;
+		List<Action[]> actions = null;
 
-        public Actions(double score, List<Action[]> actions)
-        {this.score=score;this.actions=actions;}
+		public Actions(double score, List<Action[]> actions) {
+			this.score = score;
+			this.actions = actions;
+		}
+		public int compareTo(Actions o) {
+			if (o.score == score)
+				return 0;
+			else if (o.score>score)
+			{
+				return -1;
+			}
+			else 
+				return 1;
+		};
+		
+		public void removeFirstDupeLast()
+		{
+			//get the last element add it again and remove first element
 
-    }
+			Action[] last = actions.get(actions.size()-1);
+			actions.add(last);
+			actions.remove(0);
+			
+		}
+	}
+
+	static List<Action[]> SimulateAllTurns(State initialState) {
+
+		State currentState = new State(initialState);
+
+		long timer = System.currentTimeMillis();
+
+		double maxScore = Double.NEGATIVE_INFINITY;
+		int maxIndex = 0;
+
+		Vector<Actions> poolOfSolutions = new Vector<Actions>();
+		poolOfSolutions.setSize(sizeOfPool);
+
+		double score = Double.NEGATIVE_INFINITY;
+		for (int i = 0; i < sizeOfPool; i++) {
+			currentState = new State(initialState);
+			List<Action[]> actions = generateInitialAction(currentState);
+			if (initialMutate) {
+				actions = mutate(currentState, actions, true);
+			}
+
+			for (Action[] action : actions) {
+				//System.out.println(action[1].angle+" "+action[1].thrust);
+				currentState.simulate(action);
+			}
+			score = currentState.score();
+			if (score > maxScore) {
+				//System.out.println("MAAAAAX "+score+" "+currentState.p1.p2);
+				maxScore = score;
+				maxIndex = i;
+			}
+			poolOfSolutions.set(i, new Actions(score, actions));
+		}
+		//System.out.println("On mute a fond");
+		int randomInPool = 0;
+		List<Action[]> currentSolution = null;
+		int count = 0;
+		while (System.currentTimeMillis() - timer < maxTime) {
+			count++;
+			currentState = new State(initialState);
+			randomInPool = (int) (Math.random() * sizeOfPool);
+			//System.out.println(randomInPool);
+			currentSolution = (poolOfSolutions.get(randomInPool)).actions;
+			currentSolution = mutate(currentState, currentSolution, true);
+
+			for (Action[] action : currentSolution) {
+				//System.out.println(action[1].angle+" "+action[1].thrust);
+				currentState.simulate(action);
+			}
+			
+			score = currentState.score();
+			//System.out.println("score="+score);
+			// find the min in the vector and replace it
+			double minScore = Double.POSITIVE_INFINITY;
+			int minIndex = 0;
+			double currScore = 0;
+			for (int i = 0; i < sizeOfPool; i++) {
+				currScore = poolOfSolutions.get(i).score;
+
+				if (currScore < minScore) {
+					
+					minScore = currScore;
+					//System.out.println("minScore:"+minScore+" "+score);
+					minIndex = i;
+				}
+			}
+			//System.out.println("score="+score);
+			//System.out.println("minscore="+minScore);
+			
+			// min found replace it if new score is better
+			if (minScore < score) {
+				//System.out.println("BetterMin:"+score);
+				poolOfSolutions.set(minIndex, new Actions(score, currentSolution));
+				if (score > maxScore) {
+					maxScore = score;
+					//System.out.println("MAAAAAX "+score+" "+currentState.p1.p2);
+					maxIndex = minIndex;
+				}
+			}
+		}
+		//System.out.println("Nb Iteration=" + count +" "+poolOfSolutions.get(maxIndex).score);
+		return poolOfSolutions.get(maxIndex).actions;
+	}
+
+	
+	static Vector<Actions> poolOfSolutions2 = null;
+	static long maxTime = 70; // to adjust\
+	static long enemyTime = 25;
+	static int sizeOfPool = 20; // 40; // sizeOfPool
+	static boolean initialMutate = true;
+	
+	static List<Action[]> SimulateAllTurns2(State initialState) {
+
+		// Adust here
+
+
+		State currentState = new State(initialState);
+
+		long timer = System.currentTimeMillis();
+
+		double maxScore = Double.NEGATIVE_INFINITY;
+		int maxIndex = 0;
+
+		boolean firstTime = false;
+		int beg = 0;
+		if (poolOfSolutions2 == null)
+		{
+			firstTime = true;
+			poolOfSolutions2 = new Vector<Actions>();
+			poolOfSolutions2.setSize(sizeOfPool);
+		}
+		else
+		{
+			Collections.sort(poolOfSolutions2);
+			beg = sizeOfPool / 2;
+		}
+
+
+
+		double score = Double.NEGATIVE_INFINITY;
+		// start at beg in case we restart 
+		// first half is the best from previous path to which we remove consumed element from previous turn and add a new turn at the end
+		// and then created from scratch second set of elements
+		
+		for (int i = 0; i < beg; i++)
+		{
+			Actions actions = poolOfSolutions2.get(i);
+			actions.removeFirstDupeLast();
+			currentState = new State(initialState);
+
+
+			for (Action[] action : actions.actions) {
+				//System.out.println(action[1].angle+" "+action[1].thrust);
+				currentState.simulate(action);
+			}
+			score = currentState.score();
+			actions.score = score;
+			if (score > maxScore) {
+				//System.out.println("MAAAAAX "+score+" "+currentState.p1.p2);
+				maxScore = score;
+				maxIndex = i;
+			}
+			//poolOfSolutions2.set(i, new Actions(score, actions));
+		}
+		for (int i = beg; i < sizeOfPool; i++) {
+			currentState = new State(initialState);
+			List<Action[]> actions = generateInitialAction(currentState);
+
+			for (Action[] action : actions) {
+				//System.out.println(action[1].angle+" "+action[1].thrust);
+				currentState.simulate(action);
+			}
+			score = currentState.score();
+			if (score > maxScore) {
+				//System.out.println("MAAAAAX "+score+" "+currentState.p1.p2);
+				maxScore = score;
+				maxIndex = i;
+			}
+			poolOfSolutions2.set(i, new Actions(score, actions));
+		}
+		//System.out.println("On mute a fond");
+		int randomInPool = 0;
+		List<Action[]> currentSolution = null;
+		int count = 0;
+		while (System.currentTimeMillis() - timer < maxTime) {
+			count++;
+			currentState = new State(initialState);
+			randomInPool = (int) (Math.random() * sizeOfPool);
+			//System.out.println(randomInPool);
+			currentSolution = (poolOfSolutions2.get(randomInPool)).actions;
+			currentSolution = mutate(currentState, currentSolution, true);
+
+			for (Action[] action : currentSolution) {
+				//System.out.println(action[1].angle+" "+action[1].thrust);
+				currentState.simulate(action);
+			}
+			
+			score = currentState.score();
+			//System.out.println("score="+score);
+			// find the min in the vector and replace it
+			double minScore = Double.POSITIVE_INFINITY;
+			int minIndex = 0;
+			double currScore = 0;
+			for (int i = 0; i < sizeOfPool; i++) {
+				currScore = poolOfSolutions2.get(i).score;
+
+				if (currScore < minScore) {
+					
+					minScore = currScore;
+					//System.out.println("minScore:"+minScore+" "+score);
+					minIndex = i;
+				}
+			}
+			//System.out.println("score="+score);
+			//System.out.println("minscore="+minScore);
+			
+			// min found replace it if new score is better
+			if (minScore < score) {
+				//System.out.println("BetterMin:"+score);
+				poolOfSolutions2.set(minIndex, new Actions(score, currentSolution));
+				if (score > maxScore) {
+					maxScore = score;
+					//System.out.println("MAAAAAX "+score+" "+currentState.p1.p2);
+					maxIndex = minIndex;
+				}
+			}
+		}
+		//System.out.println("Nb Iteration=" + count +" "+poolOfSolutions2.get(maxIndex).score);
+		return poolOfSolutions2.get(maxIndex).actions;
+	}
+	
+	static List<Action[]> SimulateAllTurns3(State initialState) {
+
+		// Adust here
+
+
+		State currentState = new State(initialState);
+
+		long timer = System.currentTimeMillis();
+
+		double maxScore = Double.NEGATIVE_INFINITY;
+		int maxIndex = 0;
+
+		boolean firstTime = false;
+		int beg = 0;
+		if (poolOfSolutions2 == null)
+		{
+			firstTime = true;
+			poolOfSolutions2 = new Vector<Actions>();
+			poolOfSolutions2.setSize(sizeOfPool);
+		}
+		else
+		{
+			Collections.sort(poolOfSolutions2);
+			beg = sizeOfPool / 2;
+		}
+
+
+
+		double score = Double.NEGATIVE_INFINITY;
+		// start at beg in case we restart 
+		// first half is the best from previous path to which we remove consumed element from previous turn and add a new turn at the end
+		// and then created from scratch second set of elements
+		
+		for (int i = 0; i < beg; i++)
+		{
+			Actions actions = poolOfSolutions2.get(i);
+			actions.removeFirstDupeLast();
+			currentState = new State(initialState);
+
+
+			for (Action[] action : actions.actions) {
+				//System.out.println(action[1].angle+" "+action[1].thrust);
+				currentState.simulate(action);
+			}
+			score = currentState.score();
+			actions.score = score;
+			if (score > maxScore) {
+				//System.out.println("MAAAAAX "+score+" "+currentState.p1.p2);
+				maxScore = score;
+				maxIndex = i;
+			}
+			//poolOfSolutions2.set(i, new Actions(score, actions));
+		}
+		for (int i = beg; i < sizeOfPool; i++) {
+			currentState = new State(initialState);
+			List<Action[]> actions = generateInitialAction(currentState);
+
+			for (Action[] action : actions) {
+				//System.out.println(action[1].angle+" "+action[1].thrust);
+				currentState.simulate(action);
+			}
+			score = currentState.score();
+			if (score > maxScore) {
+				//System.out.println("MAAAAAX "+score+" "+currentState.p1.p2);
+				maxScore = score;
+				maxIndex = i;
+			}
+			poolOfSolutions2.set(i, new Actions(score, actions));
+		}
+		//System.out.println("On mute a fond");
+		int randomInPool = 0;
+		List<Action[]> currentSolution = null;
+		int count = 0;
+		long currentTime = System.currentTimeMillis() - timer;
+		boolean improveAlly = false; // we start by the enemy
+		while (currentTime < maxTime) {
+			currentTime = System.currentTimeMillis() - timer;
+			if (currentTime > enemyTime) // we have spent enough time to work on the enemy now work on our own
+				improveAlly = true;
+			count++;
+			currentState = new State(initialState);
+			randomInPool = (int) (Math.random() * sizeOfPool);
+			//System.out.println(randomInPool);
+			currentSolution = (poolOfSolutions2.get(randomInPool)).actions;
+			currentSolution = mutate(currentState, currentSolution, improveAlly);
+
+			for (Action[] action : currentSolution) {
+				//System.out.println(action[1].angle+" "+action[1].thrust);
+				currentState.simulate(action);
+			}
+			
+			score = currentState.score(improveAlly);
+			
+			//System.out.println("score="+score);
+			// find the min in the vector and replace it
+			double minScore = Double.POSITIVE_INFINITY;
+			int minIndex = 0;
+			double currScore = 0;
+			for (int i = 0; i < sizeOfPool; i++) {
+				currScore = poolOfSolutions2.get(i).score;
+
+				if (currScore < minScore) {
+					
+					minScore = currScore;
+					//System.out.println("minScore:"+minScore+" "+score);
+					minIndex = i;
+				}
+			}
+			//System.out.println("score="+score);
+			//System.out.println("minscore="+minScore);
+			
+			// min found replace it if new score is better
+			if (minScore < score) {
+				//System.out.println("BetterMin:"+score);
+				poolOfSolutions2.set(minIndex, new Actions(score, currentSolution));
+				if (score > maxScore) {
+					maxScore = score;
+					//System.out.println("MAAAAAX "+score+" "+currentState.p1.p2);
+					maxIndex = minIndex;
+				}
+			}
+		}
+		//System.out.println("Nb Iteration=" + count +" "+poolOfSolutions2.get(maxIndex).score);
+		return poolOfSolutions2.get(maxIndex).actions;
+	}
+	
+	static List<Action[]> SimulateAllTurns4(State initialState) {
+
+		// Adust here
+
+		State currentState = new State(initialState);
+
+		long timer = System.currentTimeMillis();
+
+		double maxScore = Double.NEGATIVE_INFINITY;
+		int maxIndex = 0;
+
+		Vector<Actions> poolOfSolutions = new Vector<Actions>();
+		poolOfSolutions.setSize(sizeOfPool);
+
+		double score = Double.NEGATIVE_INFINITY;
+		for (int i = 0; i < sizeOfPool; i++) {
+			currentState = new State(initialState);
+			List<Action[]> actions = generateInitialAction(currentState);
+			if (initialMutate) {
+				actions = mutate(currentState, actions, true);
+			}
+
+			for (Action[] action : actions) {
+				//System.out.println(action[1].angle+" "+action[1].thrust);
+				currentState.simulate(action);
+			}
+			score = currentState.score();
+			if (score > maxScore) {
+				//System.out.println("MAAAAAX "+score+" "+currentState.p1.p2);
+				maxScore = score;
+				maxIndex = i;
+			}
+			poolOfSolutions.set(i, new Actions(score, actions));
+		}
+		//System.out.println("On mute a fond");
+		int randomInPool = 0;
+		List<Action[]> currentSolution = null;
+		int count = 0;
+		long currentTime = System.currentTimeMillis() - timer;
+		boolean improveAlly = false; // we start by the enemy
+		while (currentTime < maxTime) {
+			currentTime = System.currentTimeMillis() - timer;
+			if (currentTime > enemyTime) // we have spent enough time to work on the enemy now work on our own
+				improveAlly = true;
+			count++;
+			currentState = new State(initialState);
+			randomInPool = (int) (Math.random() * sizeOfPool);
+			//System.out.println(randomInPool);
+			currentSolution = (poolOfSolutions.get(randomInPool)).actions;
+			currentSolution = mutate(currentState, currentSolution, improveAlly);
+
+			for (Action[] action : currentSolution) {
+				//System.out.println(action[1].angle+" "+action[1].thrust);
+				currentState.simulate(action);
+			}
+			
+			score = currentState.score(improveAlly);
+			//System.out.println("score="+score);
+			// find the min in the vector and replace it
+			double minScore = Double.POSITIVE_INFINITY;
+			int minIndex = 0;
+			double currScore = 0;
+			for (int i = 0; i < sizeOfPool; i++) {
+				currScore = poolOfSolutions.get(i).score;
+
+				if (currScore < minScore) {
+					
+					minScore = currScore;
+					//System.out.println("minScore:"+minScore+" "+score);
+					minIndex = i;
+				}
+			}
+			//System.out.println("score="+score);
+			//System.out.println("minscore="+minScore);
+			
+			// min found replace it if new score is better
+			if (minScore < score) {
+				//System.out.println("BetterMin:"+score);
+				poolOfSolutions.set(minIndex, new Actions(score, currentSolution));
+				if (score > maxScore) {
+					maxScore = score;
+					//System.out.println("MAAAAAX "+score+" "+currentState.p1.p2);
+					maxIndex = minIndex;
+				}
+			}
+		}
+		//System.out.println("Nb Iteration=" + count +" "+poolOfSolutions.get(maxIndex).score);
+		return poolOfSolutions.get(maxIndex).actions;	}
+	/**
+	 * Flag1 is the flag p0 and p1 try to catch
+	 *
+	 */
+
+	static List<Action[]> generateInitialAction(
+			State state/*
+						 * Pod[] p, int flagx1, int flagy1, int flagx2, int
+						 * flagy2, int base
+						 */) {
+		List<Action[]> result = new ArrayList<>();
+
+		PlayerState me = state.p1;
+		PlayerState en = state.p2;
+
+		int FlagPod = -1, ChasePod = -1;
+		double[] angle = new double[4];
+
+		if (me.p1.hasFlag) {
+			FlagPod = 0;
+			ChasePod = 1;
+		} else if (me.p2.hasFlag) {
+			FlagPod = 1;
+			ChasePod = 0;
+		}
+		if (FlagPod != -1) {
+			angle[FlagPod] = me.myBase < 5000 ? Math.PI : 0;
+		} else { // no flag pod
+			if (dist2(me.p1, me.flagx, me.flagy) > dist2(me.p2, me.flagx, me.flagy)) {
+				FlagPod = 1;
+				ChasePod = 0;
+			} else {
+				FlagPod = 0;
+				ChasePod = 1;
+			}
+			Pod p = FlagPod == 0 ? me.p1 : me.p2;
+			angle[FlagPod] = computeAngle(p.x, p.y, me.flagx, me.flagy);// get
+																		// close
+																		// to
+																		// enemy
+																		// flag
+
+		}
+		Pod p = ChasePod == 0 ? me.p1 : me.p2;
+		if (en.p1.hasFlag) {
+
+			angle[ChasePod] = computeAngle(p.x, p.y, (int) en.p1.x, (int) en.p1.y);
+		} else if (en.p2.hasFlag) {
+			angle[ChasePod] = computeAngle(p.x, p.y, (int) en.p2.x, (int) en.p2.y);
+		} else {
+			angle[ChasePod] = computeAngle(p.x, p.y, en.flagx, en.flagy);
+		}
+		
+		
+		
+		int FlagPodE = -1, ChasePodE = -1;
+
+		if (en.p1.hasFlag) {
+			FlagPodE = 2;
+			ChasePodE = 3;
+		} else if (en.p2.hasFlag) {
+			FlagPodE = 3;
+			ChasePodE = 2;
+		}
+		if (FlagPodE != -1) {
+			angle[FlagPodE] = en.myBase < 5000 ? Math.PI : 0;
+		} else { // no flag pod
+			if (dist2(en.p1, en.flagx, en.flagy) > dist2(en.p2, en.flagx, en.flagy)) {
+				FlagPodE = 3;
+				ChasePodE = 2;
+			} else {
+				FlagPodE = 2;
+				ChasePodE = 3;
+			}
+			p = FlagPodE == 2 ? en.p1 : en.p2;
+			angle[FlagPodE] = computeAngle(p.x, p.y, en.flagx, en.flagy);// get
+																		// close
+																		// to
+																		// enemy
+																		// flag
+
+		}
+		p = ChasePodE == 2 ? en.p1 : en.p2;
+		if (me.p1.hasFlag) {
+			angle[ChasePodE] = computeAngle(p.x, p.y, (int) me.p1.x, (int) me.p1.y);
+		} else if (me.p2.hasFlag) {
+			angle[ChasePodE] = computeAngle(p.x, p.y, (int) me.p2.x, (int) me.p2.y);
+		} else {
+			angle[ChasePodE] = computeAngle(p.x, p.y, me.flagx, me.flagy);
+		}
+		
+
+
+//		for (int i = 0; i < 4; ++i) {
+//			System.err.println(angle[i] * 180 / Math.PI);
+//		}
+
+		for (int i = 0; i < MAX_ACTION_DEPTH; i++) {
+			int trust0 = 100;// On fout la patate
+			Action action0 = new Action(angle[0], trust0);
+			Action action1 = new Action(angle[1], trust0);
+			Action action2 = new Action(angle[2], trust0);
+			Action action3 = new Action(angle[3], trust0);
+			Action[] actionPerPod = new Action[] { action0, action1, action2, action3 };
+			result.add(actionPerPod);
+		}
+		return result;
+
+	}
+
+	private static double computeAngle(double x, double y, int flagx1, int flagy1) {
+		double deltaX = flagx1 - x;
+		double deltaY = flagy1 - y;
+		return Math.atan2(deltaY, deltaX);
+	}
+
+	static List<Action[]> mutate(State state, List<Action[]> actionsPerStep, boolean forAlly) {
+//		 return actionsPerStep;
+
+		List<Action[]> result = new ArrayList<>();
+
+		if (forAlly)
+		{
+			for (int i = 0; i < actionsPerStep.size(); i++) {
+				Action[] newStep = new Action[4];
+				newStep[0] = mutateOneAction(
+						state.p1.p1.boost - i/* we check the next boost level */, actionsPerStep.get(i)[0],
+						AMPLITUDE_DECREASE_FACTOR[i]);
+				newStep[1] = mutateOneAction(
+						state.p1.p2.boost - i/* we check the next boost level */, actionsPerStep.get(i)[1],
+						AMPLITUDE_DECREASE_FACTOR[i]);
+				newStep[2] = actionsPerStep.get(i)[2];
+				newStep[3] = actionsPerStep.get(i)[3];
+				result.add(newStep);
+			}
+		}
+		else
+		{
+			for (int i = 0; i < actionsPerStep.size(); i++) {
+				Action[] newStep = new Action[4];
+				newStep[0] = actionsPerStep.get(i)[0];
+				newStep[1] = actionsPerStep.get(i)[1];
+				newStep[2] = mutateOneAction(
+						state.p2.p1.boost - i/* we check the next boost level */, actionsPerStep.get(i)[2],
+						AMPLITUDE_DECREASE_FACTOR[i]);
+				newStep[3] = mutateOneAction(
+						state.p2.p2.boost - i/* we check the next boost level */, actionsPerStep.get(i)[3],
+						AMPLITUDE_DECREASE_FACTOR[i]);
+
+				result.add(newStep);
+			}
+		}
+			
+		return result;
+	}
     
     static class Action {
     	Action() {};
@@ -324,194 +932,15 @@ class player1 {
         public Action(double angle,int t) {this.angle=angle;this.thrust=t;}
         public String toString(Pod p) {
             return (int)(p.x+10000*Math.cos(angle))+" "+(int)(p.y+10000*Math.sin(angle))+" "+(thrust==500?"BOOST":thrust);
+            //return "1000 1000 100";
         }
         public String toString() {return "Angle="+angle+" ,Thrust="+thrust;}
     }
     
   
-static List<Action[]> SimulateAllTurns(State initialState)
-    {
-
-     // Adust here 
-     long maxTime = 70; // to adjust\
-     int sizeOfPool = 40; // sizeOfPool
-     boolean initialMutate = true;
-     
-     
-     State currentState = new State(initialState);
-     
-     long timer= System.currentTimeMillis();
-
-     
-	double maxScore = Double.MIN_VALUE;
-	int maxIndex = 0;
-
-     Vector<Actions> poolOfSolutions = new Vector<Actions>();
-     poolOfSolutions.setSize(sizeOfPool);
-     
-     double score = Double.MIN_VALUE;
-     for (int i =0; i<sizeOfPool; i++)
-     {
-     List<Action[]> actions = generateInitialAction(initialState);
-     if (initialMutate)
-     {
-     actions = mutate(initialState, actions);
-     }
-     
-       for (Action[] action : actions)
-     {
-       currentState.simulate(action);
-     }
-     score = currentState.score();
-     if (score>maxScore)
-     {
-     maxScore=score;
-     maxIndex=i;
-     }
-     poolOfSolutions.set(i, new Actions(score, actions));
-     }
-   
-     int randomInPool = 0;
-     List<Action[]> currentSolution = null;
-     int count=0;
-     while (System.currentTimeMillis() - timer < maxTime)
-     {
-     count++;
-     currentState = new State(initialState);
-     randomInPool = (int) (Math.random() * sizeOfPool);
-     currentSolution = (poolOfSolutions.get(randomInPool)).actions;
-     currentSolution = mutate(currentState, currentSolution);
-     
-     for (Action[] action : currentSolution)
-     {
-     currentState.simulate(action);
-     }     
-     score = currentState.score();
-     // find the min in the vector and replace it
-     double minScore = Double.MAX_VALUE;
-     int minIndex = 0;
-     double currScore = 0;
-     for(int i = 0; i<sizeOfPool; i++)
-     {
-     currScore = poolOfSolutions.get(i).score;
-     
-     if (currScore < minScore)
-     {
-     minScore = currScore;
-     minIndex = i;
-     }
-     }
-     // min found replace it if new score is better
-     if (minScore < score)
-     {
-     poolOfSolutions.set(minIndex, new Actions(score,currentSolution));
-         if (score>maxScore)
-         {
-         maxScore=score;
-         maxIndex=minIndex;
-         }
-     }
-     
-       }
-     //System.err.println("Nb Iteration="+count);
-	return poolOfSolutions.get(maxIndex).actions;
-    } 
-
-/**
-	* Flag1 is the flag p0 and p1 try to catch
-	*
-	*/
-
-static List<Action[]> generateInitialAction(
-	State state/*
-	* Pod[] p, int flagx1, int flagy1, int flagx2, int
-	* flagy2, int base
-	*/) {
-	List<Action[]> result = new ArrayList<>();
-	
-	
-	PlayerState me=state.p1;
-	PlayerState en=state.p2;
-	
-	
-	 int FlagPod=-1,ChasePod=-1;
-	 double[] angle = new double[4];
-	 
-            if(me.p1.hasFlag) {
-                FlagPod=0;
-                ChasePod=1;
-            } else if (me.p2.hasFlag) {
-                FlagPod=1;
-                ChasePod=0;
-            }
-            if(FlagPod != -1) {
-               angle[FlagPod]=me.myBase <5000? Math.PI:0;
-            } else { // no flag pod
-                if(dist2(me.p1,me.flagx,me.flagy) > dist2(me.p2,me.flagx,me.flagy)) {
-                    FlagPod=1; ChasePod=0;
-                } else {
-                    FlagPod=0; ChasePod=1;
-                }
-                Pod p=FlagPod==0?me.p1:me.p2;
-                 angle[FlagPod]=computeAngle(p.x, p.y, me.flagx,me.flagy);// get close to enemy flag
-                
-            }
-             Pod p = ChasePod==0?me.p1:me.p2;
-            if(en.p1.hasFlag) {
-               
-               angle[ChasePod]= computeAngle(p.x, p.y, (int)en.p1.x,(int)en.p1.y);
-            } else if(en.p2.hasFlag) {
-               angle[ChasePod]= computeAngle(p.x, p.y,(int) en.p2.x,(int)en.p2.y);
-            } else {
-               angle[ChasePod]= computeAngle(p.x, p.y, en.flagx,en.flagy);
-            }
-	angle[2]=0;
-	angle[3]=0;
-	
-	for(int i=0;i<4;++i) {
-	    //System.err.println(angle[i]*180/Math.PI);
-	}
-	
-	
-	for (int i = 0; i < MAX_ACTION_DEPTH; i++) {
-    	int trust0 = 100;// On fout la patate
-    	Action action0 = new Action(angle[0], trust0);
-    	Action action1 = new Action(angle[1], trust0);
-    	Action action2 = new Action(angle[2], trust0);
-    	Action action3 = new Action(angle[3], trust0);
-    	Action[] actionPerPod = new Action[] { action0, action1, action2, action3 };
-    	result.add(actionPerPod);
-	}
-	return result;
-
-	} 
 
 
 
-private static double computeAngle(double x, double y, int flagx1, int flagy1) {
-	double deltaX = flagx1 - x;
-	double deltaY = flagy1 - y;
-	return Math.atan2(deltaY,  deltaX);
-	}
-
-
-static List<Action[]> mutate(State state, List<Action[]> actionsPerStep) {
-    
-	List<Action[]> result = actionsPerStep;//actionsPerStep;//new ArrayList<>();
-//	for (int i = 0; i < actionsPerStep.size(); i++) {
-//    	Action[] newStep = new Action[4];
-//    	newStep[0] = mutateOneAction(
-//    	state.p1.p1.boost - i/* we check the next boost level */, actionsPerStep.get(i)[0],
-//    	AMPLITUDE_DECREASE_FACTOR[i]);
-//    	newStep[1] = mutateOneAction(
-//    	state.p1.p2.boost - i/* we check the next boost level */, actionsPerStep.get(i)[1],
-//    	AMPLITUDE_DECREASE_FACTOR[i]);
-//    	newStep[2]=new Action(0,0);
-//    	newStep[3]=new Action(0,0);
-//    	result.add(newStep);
-//	}
-	return result;
-} 
 
 
 private static Action mutateOneAction(int boostState, Action action, double amplitude) {

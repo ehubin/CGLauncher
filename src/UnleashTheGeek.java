@@ -23,7 +23,7 @@ class UnleashTheGeek implements GameState {
 		s.p1.p1.y=2500;
 		s.p1.p2.x=500;
 		s.p1.p2.y=5500;
-		s.p1.flagx=1000;
+		s.p1.flagx=9000;
 		s.p1.flagy=4000;
 		s.p1.myBase=1000;
 		
@@ -31,7 +31,7 @@ class UnleashTheGeek implements GameState {
 		s.p2.p1.y=2500;
 		s.p2.p2.x=9500;
 		s.p2.p2.y=5500;
-		s.p2.flagx=9000;
+		s.p2.flagx=1000;
 		s.p2.flagy=4000;
 		s.p2.myBase=9000;
 
@@ -69,12 +69,12 @@ class UnleashTheGeek implements GameState {
 		int x=sc.nextInt(),y=sc.nextInt();
 		String str=sc.next();
 		int thrust=str.equals("BOOST") ? 500: Integer.parseInt(str);
-		double angle= Math.atan2(x-ps.p1.x,y-ps.p1.y);
+		double angle= Math.atan2(y-ps.p1.y,x-ps.p1.x);
 		player1.Action a1=new player1.Action(angle,thrust);
 		x=sc.nextInt();y=sc.nextInt();
 		str=sc.next();
 		thrust=str.equals("BOOST") ? 500: Integer.parseInt(str);
-		angle= Math.atan2(x-ps.p2.x,y-ps.p2.y);
+		angle= Math.atan2(y-ps.p2.y,x-ps.p2.x);
 		player1.Action a2=new player1.Action(angle,thrust);
 		if(id==0) {
 			a[0]=a1;a[1]=a2;
