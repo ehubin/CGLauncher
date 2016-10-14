@@ -90,7 +90,11 @@ class UnleashTheGeek implements GameState {
 			if(sc!= null) sc.close();
 		}
 		if(res) { // resolve turn
+			try{
 			s.simulate(a);
+			} catch(Exception e) {
+				e.printStackTrace(System.err);
+			}
 		}
 		return res;
 	}
