@@ -44,6 +44,11 @@ class player1 {
             flagx=s.flagx; flagy=s.flagy;
             myBase=s.myBase;
         }
+        void captureFlag(Pod winner) { //implement flag capture for thsi player
+        	flagx=-1;
+        	flagy=-1;
+        	winner.hasFlag=true;
+        }
         double score(PlayerState other) {
             double res=nbFlagsCaptured*2*DIAG;
             Pod FlagPod=null,ChasePod=null;
@@ -119,10 +124,10 @@ class player1 {
             if(p1.myBase==-1) {p1.myBase=(p2.flagx>5000?BASE_RIGHT:BASE_LEFT); p2.myBase= (p1.myBase==BASE_LEFT?BASE_RIGHT:BASE_LEFT);}
         }
         void simulate(Action[] a) {
-            p1.p1.move(a[0],this);
-            p1.p2.move(a[1],this);
-            p2.p1.move(a[2],this);
-            p2.p2.move(a[3],this);
+            p1.p1.move(a[0],this,this.p1);
+            p1.p2.move(a[1],this,this.p1);
+            p2.p1.move(a[2],this,this.p2);
+            p2.p2.move(a[3],this,this.p2);
         }
         public boolean equals(Object o) { State s=(State)o; return p1.equals(s.p1)&&p2.equals(s.p2);}
         public String toString() { return p1.toString()+"\n"+p2.toString();}
@@ -149,14 +154,14 @@ class player1 {
             vy=p.vy;
             hasFlag=p.hasFlag;
         }
-        void move(Action a,State s) {
+        void move(Action a,State s,PlayerState ps) {
            Pod save=new Pod(this);
            
             double vtx=a.thrust*Math.cos(a.angle);
             double vty=a.thrust*Math.sin(a.angle);
             vx+=vtx;vy+=vty;
             double t=0.0,colT;
-            while((colT=getWall(t)) >=0) {
+            while((colT=getWall(t,ps)) >=0) {
             	t=colT;
             }
             x+=vx*(1.0-t);
@@ -170,13 +175,14 @@ class player1 {
 			}
             vx=(int)vx;vy=(int)vy;
         }
-        double getWall(double t) {
+        double getWall(double t,PlayerState ps) {
         	double smallest=2.0;
         	double nx=x+vx*(1.0-t),ny=y+vy*(1.0-t);
         	if(x==400 && nx<400) 	{vx=-vx; return t;}
         	if(x==9600 && nx>9600) 	{vx=-vx; return t;}
         	if ( (y==400 && ny <400) || (y==7600 && ny >7600)) {vy=-vy; return t;}
             int best=-1;
+            double flagT=catchFlag(ps.flagx,ps.flagy);
             double col=get_line_intersection(x,y,nx,ny,400, 400, 9600, 400);
             if(col>0 && col <smallest) {smallest=col;best=0;}
             col = get_line_intersection(x,y,nx,ny,400, 400, 400, 7600);
@@ -187,6 +193,9 @@ class player1 {
             if(col>0 && col <smallest) {smallest=col;best=3;}
             
             if(best>=0) {
+            	if(flagT >= 0 && flagT <=smallest) {
+            		ps.captureFlag(this);
+            	}
             	x+=vx*(1.0-t)*smallest;y+=vy*(1.0-t)*smallest;
             	switch(best) {
             		case 0:
@@ -201,6 +210,7 @@ class player1 {
             	//System.err.println("Collision"+(t+(1.0-t)*smallest));
             	return t+(1.0-t)*smallest;
             }
+            if(flagT >= 0 && flagT<=1) { ps.captureFlag(this);}
             return -1;  
         }
         public String toString() {
@@ -211,10 +221,7 @@ class player1 {
             return p.x==x && p.y==y && p.vx==vx && p.vy==vy && p.hasFlag==hasFlag;
         }
         final static int SR=2*400*400;
-        
-        double wallCollision() { // return -1 if no wall collision or time of wall collision
-            return 0;
-        }
+       
         Collision collision(Pod u) {
             // Distance carré
             double dist = dist2(this,u);
@@ -278,6 +285,66 @@ class player1 {
             }
         
             return null;
+        }
+        static final int POD_FLAG=400*400+150*150;
+        double catchFlag(int fx,int fy) {
+            if (fx==-1) return -1;// no flag to capture
+        	// Distance carré
+            double dist = dist2(this,fx,fy);
+        
+        
+            // On prend tout au carré pour éviter d'avoir à appeler un sqrt inutilement. C'est mieux pour les performances
+        
+            if (dist < POD_FLAG) {
+                // Les objets sont déjà l'un sur l'autre. On a donc une collision immédiate
+                return 0.0;
+            }
+        
+        
+            // On se met dans le référentiel de u. u est donc immobile et se trouve sur le point (0,0) après ça
+            double x = this.x - fx;
+            double y = this.y - fy;
+            Point myp = new Point(x, y);
+            Point up = new Point(0, 0);
+        
+            // On cherche le point le plus proche de u (qui est donc en (0,0)) sur la droite décrite par notre vecteur de vitesse
+            Point p = up.closest(myp, new Point(x + vx, y + vy));
+        
+            // Distance au carré entre u et le point le plus proche sur la droite décrite par notre vecteur de vitesse
+            double pdist = up.distance2(p);
+        
+            // Distance au carré entre nous et ce point
+            double mypdist = this.distance2(p);
+        
+            // Si la distance entre u et cette droite est inférieur à la somme des rayons, alors il y a possibilité de collision
+            if (pdist < POD_FLAG) {
+                // Notre vitesse sur la droite
+                double length = Math.sqrt(vx*vx + vy*vy);
+        
+                // On déplace le point sur la droite pour trouver le point d'impact
+                double backdist = Math.sqrt(SR - pdist);
+                p.x = p.x - backdist * (vx / length);
+                p.y = p.y - backdist * (vy / length);
+        
+                // Si le point s'est éloigné de nous par rapport à avant, c'est que notre vitesse ne va pas dans le bon sens
+                if (myp.distance2(p) > mypdist) {
+                    return -1;
+                }
+        
+                pdist = p.distance(myp);
+        
+                // Le point d'impact est plus loin que ce qu'on peut parcourir en un seul tour
+                if (pdist > length) {
+                    return -1;
+                }
+        
+                // Temps nécessaire pour atteindre le point d'impact
+                double t = pdist / length;
+        
+                return t;
+            }
+        
+            return -1;
         }
     }
     static class Point {

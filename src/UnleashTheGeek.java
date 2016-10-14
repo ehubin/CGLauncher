@@ -124,10 +124,12 @@ class UnleashTheGeek implements GameState {
 		public void drawPod(player1.Pod p,Graphics2D g) {
 			final int rad=400;
 			final float coeff=5.f;
-			System.err.println(p.x+" "+p.vx+" "+p.y+" "+p.vy);
+			//System.err.println(p.x+" "+p.vx+" "+p.y+" "+p.vy);
 			Shape theCircle = new Ellipse2D.Double(p.x-rad,p.y-rad, 2*rad, 2*rad);
+			if (p.hasFlag) g.setStroke(new BasicStroke(50));
 		    g.draw(theCircle);
 		    g.drawLine((int)p.x, (int)p.y,(int)( (p.x+coeff*p.vx)),(int)((p.y+coeff*p.vy)));
+		    if (p.hasFlag) g.setStroke(new BasicStroke(1));
 		}
 
 
