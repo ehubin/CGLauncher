@@ -96,7 +96,7 @@ class player1 {
         }
     }
     static class State {
-        static final int BASE_LEFT=0,BASE_RIGHT=10000;
+        static final int BASE_LEFT=1000,BASE_RIGHT=9000;
         PlayerState p1,p2;
         double score() {
             return p1.score(p2)-p2.score(p1);
@@ -121,7 +121,7 @@ class player1 {
             p2.p2.initPod(s);
             
             //TODO init base
-            if(p1.myBase==-1) {p1.myBase=(p2.flagx>5000?BASE_RIGHT:BASE_LEFT); p2.myBase= (p1.myBase==BASE_LEFT?BASE_RIGHT:BASE_LEFT);}
+            if(p1.myBase==-1) {p1.myBase=(p2.flagx>5000?BASE_LEFT:BASE_RIGHT); p2.myBase= (p1.myBase==BASE_LEFT?BASE_RIGHT:BASE_LEFT);}
         }
         void simulate(Action[] a) {
             p1.p1.move(a[0],this,this.p1);
