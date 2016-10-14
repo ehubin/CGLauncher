@@ -95,8 +95,9 @@ class player1 {
             return sb.toString();
         }
     }
+    static final int BASE_LEFT=1000,BASE_RIGHT=9000;
     static class State {
-        static final int BASE_LEFT=1000,BASE_RIGHT=9000;
+        
         PlayerState p1,p2;
         double score() {
             return p1.score(p2)-p2.score(p1);
@@ -155,11 +156,18 @@ class player1 {
             hasFlag=p.hasFlag;
         }
         void move(Action a,State s,PlayerState ps) {
-           Pod save=new Pod(this);
+        	Pod save=new Pod(this);
            
             double vtx=a.thrust*Math.cos(a.angle);
             double vty=a.thrust*Math.sin(a.angle);
             vx+=vtx;vy+=vty;
+            
+            if(hasFlag && (x+vx <=1000 || x+vx >= 9000)) {
+            	ps.flagx=ps.myBase == BASE_LEFT?BASE_RIGHT:BASE_LEFT;
+            	ps.flagy=4000;
+            	hasFlag=false;
+            	ps.nbFlagsCaptured++;
+            }
             double t=0.0,colT;
             while((colT=getWall(t,ps)) >=0) {
             	t=colT;

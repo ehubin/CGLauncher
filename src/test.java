@@ -11,7 +11,7 @@ public class test {
 		p.vy=165;
 		player1.Action a = new player1.Action(2.96759828703572,100);
 		
-		p.move(a, null);
+		p.move(a, null,null);
 	}
 
 }
