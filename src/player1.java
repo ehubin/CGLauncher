@@ -190,7 +190,7 @@ class player1 {
             			vx=-vx;
 	            		break;
             	}
-            	System.err.println("Collision"+(t+(1.0-t)*smallest));
+            	//System.err.println("Collision"+(t+(1.0-t)*smallest));
             	return t+(1.0-t)*smallest;
             }
             return -1;  

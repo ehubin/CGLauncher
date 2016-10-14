@@ -1,3 +1,4 @@
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Shape;
@@ -60,10 +61,11 @@ class UnleashTheGeek implements GameState {
 	@Override
 	public boolean setPlayerAction(int id, String input) {
 		boolean res=false;
+		Scanner sc=null;
 		try{
 		//System.err.println("new action "+input);
 		player1.PlayerState ps=id==0?s.p1:s.p2;
-		Scanner sc= new Scanner(input);
+		sc= new Scanner(input);
 		int x=sc.nextInt(),y=sc.nextInt();
 		String str=sc.next();
 		int thrust=str.equals("BOOST") ? 500: Integer.parseInt(str);
@@ -84,6 +86,8 @@ class UnleashTheGeek implements GameState {
 		}
 		catch(Exception e) {
 			System.err.println("Exception <"+input+">");
+		} finally {
+			if(sc!= null) sc.close();
 		}
 		if(res) { // resolve turn
 			s.simulate(a);
@@ -100,18 +104,30 @@ class UnleashTheGeek implements GameState {
 
 		@Override
 		public void draw(Graphics2D g) {
-			final int rad=400;
-			g.setColor(Color.BLACK);
-			Shape theCircle = new Ellipse2D.Double(s.p1.p1.x-rad,s.p1.p1.y-rad, 2*rad, 2*rad);
-		    g.draw(theCircle);
-		    theCircle = new Ellipse2D.Double(s.p1.p2.x-rad,s.p1.p2.y-rad, 2*rad, 2*rad);
-		    g.draw(theCircle);
-		    g.setColor(Color.RED);
-		    theCircle = new Ellipse2D.Double(s.p2.p1.x-rad,s.p2.p1.y-rad, 2*rad, 2*rad);
-		    g.draw(theCircle);
-		    theCircle = new Ellipse2D.Double(s.p2.p2.x-rad,s.p2.p2.y-rad, 2*rad, 2*rad);
-		    g.draw(theCircle);
 			
+			g.setColor(Color.BLACK);
+			drawPlayer(s.p1,g);
+			g.setColor(Color.RED);
+			drawPlayer(s.p2,g);
+			
+		}
+		public void drawPlayer(player1.PlayerState ps,Graphics2D g) {
+			drawPod(ps.p1,g);
+			drawPod(ps.p2,g);
+			int rad =250;
+			Shape theCircle = new Ellipse2D.Double(ps.flagx-rad,ps.flagy-rad, 2*rad, 2*rad);
+			g.setStroke(new BasicStroke(50));
+		    g.draw(theCircle);
+			g.setStroke(new BasicStroke(1));
+		}
+		
+		public void drawPod(player1.Pod p,Graphics2D g) {
+			final int rad=400;
+			final float coeff=5.f;
+			System.err.println(p.x+" "+p.vx+" "+p.y+" "+p.vy);
+			Shape theCircle = new Ellipse2D.Double(p.x-rad,p.y-rad, 2*rad, 2*rad);
+		    g.draw(theCircle);
+		    g.drawLine((int)p.x, (int)p.y,(int)( (p.x+coeff*p.vx)),(int)((p.y+coeff*p.vy)));
 		}
 
 
