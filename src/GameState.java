@@ -10,8 +10,8 @@ public interface GameState<UI> {
 	public boolean  readActions(Scanner s,int id);
 	public int resolveActions();
 	public void startTurn();
-	public void draw(Graphics2D g);
+	public void draw(Graphics2D g); // display this state on a Graphics 2D for a graphical visualisation of the state
 	public GameState<UI> save();
 	public UI createAndShowGUI();
-	public void draw(UI ui);
+	public void draw(UI ui); // draws this state on its own UI
 }

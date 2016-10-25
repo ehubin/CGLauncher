@@ -6,11 +6,9 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.FontMetrics;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Shape;
 import java.awt.event.ActionEvent;
-import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -215,24 +213,7 @@ class UnleashTheGeek implements GameState<UnleashTheGeek.utgUI> {
 			
 		}
 		
-		@SuppressWarnings("serial")
-		public static class ImagePanel extends JPanel{
-
-		    UnleashTheGeek gs=null;
-		    public ImagePanel() {
-		    	setPreferredSize(new Dimension(500,400));
-		    }
-		    void setState(UnleashTheGeek gs) {this.gs=gs;}
-
-		    @Override
-		    protected void paintComponent(Graphics g) {
-		        super.paintComponent(g);
-		        Graphics2D gr=(Graphics2D)g;
-		        gr.setTransform(new AffineTransform(getWidth()/10000., 0, 0, getHeight()/8000., 0, 0));
-		        if(gs!= null)gs.draw(gr); 
-		    }
-
-		}
+		
 		
 		public static class utgUI {
 			JTextArea  state=new JTextArea(),actions=new JTextArea();
