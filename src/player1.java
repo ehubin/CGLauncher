@@ -1,6 +1,9 @@
 import java.awt.font.GraphicAttribute;
 import java.util.*;
 
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+
 
 
 
@@ -98,9 +101,13 @@ class player1 {
     }
     static final int BASE_LEFT=1000,BASE_RIGHT=9000;
     static class State {
-        
+        ArrayList<ChangeListener> ll=null;
         PlayerState p1,p2;
         int turn=0;
+        void addChangeListener(ChangeListener cl) { 
+        	if(ll==null) ll=new ArrayList<ChangeListener>();
+        	ll.add(cl);
+        }
         double score() {
             return p1.score(p2)-p2.score(p1);
         }
@@ -152,7 +159,6 @@ class player1 {
                 	Collision w=pods[i].getWall(t,lastCollision);
                 	if (w != null && w.t + t < 1.0 && (firstCollision == null || w.t < firstCollision.t)) {
                         firstCollision = w;
-                        lastCollision=w;
                     }
                 	//System.err.println("After wall");
                     // Collision avec un autre pod ?
@@ -162,7 +168,6 @@ class player1 {
                         // Si la collision arrive plus tôt que celle qu'on, alors on la garde
                         if (col != null && col.t + t < 1.0 && (firstCollision == null || col.t < firstCollision.t)) {
                             firstCollision = col;
-                            lastCollision= col;
                         }
                     }
                     //System.err.println("After col loop pod");
@@ -183,19 +188,21 @@ class player1 {
                     for (int i = 0; i < pods.length; ++i) {
                         pods[i].simpleMove(1.0 - t);
                     }
-
+                    if(ll!= null) {ChangeEvent evt = new ChangeEvent(this); for(ChangeListener c:ll) c.stateChanged(evt);}
                     // Fin du tour
                     t = 1.0;
                 } else {
+                	lastCollision=firstCollision;
                 	System.err.println(firstCollision);
                     // On bouge les pods du temps qu'il faut pour arriver sur l'instant `t` de la collision
                     for (int i = 0; i < pods.length; ++i) {
                         pods[i].simpleMove(firstCollision.t);
                     }
+                    if(ll!= null) {ChangeEvent evt = new ChangeEvent(this); for(ChangeListener c:ll) c.stateChanged(evt);}
                     System.err.println("Resolving "+firstCollision);
                     // On joue la collision
                     firstCollision.execute();
-
+                    if(ll!= null) {ChangeEvent evt = new ChangeEvent(this); for(ChangeListener c:ll) c.stateChanged(evt);}
                     t += firstCollision.t;
                 }
             } //while t<1
@@ -355,7 +362,7 @@ class player1 {
             Pod p=(Pod)o;
             return p.x==x && p.y==y && p.vx==vx && p.vy==vy && p.hasFlag==hasFlag;
         }
-        final static int SR=2*400*400;
+        final static int SR=4*400*400;
         
         Collision collision2(Pod u,Collision last) {
         	double dist = dist2(this,u);
@@ -447,7 +454,7 @@ class player1 {
         
             return null;
         }
-        static final int POD_FLAG=400*400+150*150;
+        static final int POD_FLAG=(400+150)*(400+150);
         double catchFlag(int fx,int fy) {
             if (fx==-1) return -1;// no flag to capture
         	// Distance carré

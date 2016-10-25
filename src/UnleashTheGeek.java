@@ -263,6 +263,7 @@ class UnleashTheGeek implements GameState<UnleashTheGeek.utgUI> {
 						System.err.println(" Slider:"+ slider.getValue());
 						if(slider.getValue()>0) sliderTouched=true;
 						if(sliderTouched) javax.swing.SwingUtilities.invokeLater(new Runnable() {
+							
 				            public void run() {UnleashTheGeek tmpState=savedState.get(slider.getValue()); tmpState.draw(utgUI.this);}
 					
 						});

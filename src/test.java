@@ -1,21 +1,38 @@
 import java.util.Scanner;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 public class test {
-
+ 
 	public static void main(String[] args) {
-		//Sorti 9143 135 -222 -162 0
-		player1.State s=new player1.State();
-		s.readInput(new Scanner(
-"1000 4000\n-1 -1\n846 5456 7 -7 0\n624 641 -632 -152 1\n2865 430 -33 -68 0\n1509 697 67 99 0\n"
-				));
-		player1.Action[] a = new player1.Action[] 
-				{ 		new player1.Action(-1.6859595144243893,2),
-						new player1.Action(3.1304919994588576,500),
-						new player1.Action(3.047745583903113,100),
-						new player1.Action(-2.7086749982693488,100)
+		final UnleashTheGeek utg = new UnleashTheGeek();
+		player1.State state=new player1.State();
+		state.readInput(new Scanner(
+				"-1 -1\n-1 -1\n1403 4625 -115 -89 0\n942 2150 -193 67 1\n2139 1252 188 279 0\n459 4847 -13 0 1\n"
+		));
+		utg.s=state;
+		utg.a= new player1.Action[] 
+				{ 		new player1.Action(2.846946275859237,97),
+						new player1.Action(3.0844576701777253,500),
+						new player1.Action(2.4979515419973675,100),
+						new player1.Action(3.141592653589793,100)
 				};
-		s.simulate(a,true);
-		System.out.println(s);
+		state.addChangeListener(new ChangeListener() {
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				UnleashTheGeek tmp = new UnleashTheGeek();
+				tmp.s = new player1.State((player1.State)e.getSource());
+				System.out.println(tmp.s);
+				UnleashTheGeek.theUI.addSave(tmp);
+			}
+		});
+		//show the UI
+		try {javax.swing.SwingUtilities.invokeAndWait(new Runnable() {public void run() {utg.createAndShowGUI();UnleashTheGeek.theUI.addSave(utg); }});} catch (Exception e1) {e1.printStackTrace();}
+		
+		
+		
+		state.simulate(utg.a,true);
+		System.out.println(state);
 	}
 
 }
