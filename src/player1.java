@@ -100,6 +100,7 @@ class player1 {
     static class State {
         
         PlayerState p1,p2;
+        int turn=0;
         double score() {
             return p1.score(p2)-p2.score(p1);
         }
@@ -110,48 +111,61 @@ class player1 {
 				return p2.score(p1) - p1.score(p2);
 		}
         State() {p1=new PlayerState(); p2=new PlayerState();}
-        State(State s)  {p1=new PlayerState(s.p1); p2=new PlayerState(s.p2);}
+        State(State s)  {p1=new PlayerState(s.p1); p2=new PlayerState(s.p2); turn=s.turn;}
             
         void readInput(Scanner s) {
             p2.flagx=s.nextInt();
             p2.flagy=s.nextInt();
-            p1.flagx=in.nextInt();
-            p1.flagy=in.nextInt();
-            p1.p1.initPod(s);
-            p1.p2.initPod(s);
-            p2.p1.initPod(s);
-            p2.p2.initPod(s);
+            p1.flagx=s.nextInt();
+            p1.flagy=s.nextInt();
+            p1.p1.initPod(s,p1);
+            p1.p2.initPod(s,p1);
+            p2.p1.initPod(s,p2);
+            p2.p2.initPod(s,p2);
             
             //TODO init base
             if(p1.myBase==-1) {p1.myBase=(p2.flagx>5000?BASE_LEFT:BASE_RIGHT); p2.myBase= (p1.myBase==BASE_LEFT?BASE_RIGHT:BASE_LEFT);}
         }
-        void simulate(Action[] a) {
+        void simulate(Action[]a) {simulate(a,false);}
+        void simulate(Action[] a,boolean var) {
+        	System.err.println("Start simulate");
         	p1.p1.updateSpeed(a[0]);
             p1.p2.updateSpeed(a[1]);
             p2.p1.updateSpeed(a[2]);
             p2.p2.updateSpeed(a[3]);
             Pod[] pods=new Pod[] {p1.p1,p1.p2,p2.p1,p2.p2};
             // Il faut conserver le temps où on en est dans le tour. Le but est d'arriver à 1.0
-            double t = 0.0;
-
+            double t = 0.0,t1=-1,t2=-1;
+            Collision lastCollision=null;
             while (t < 1.0) {
+            	if(t==t1&& t1==t2) {
+            		System.err.println("Infinite loop detected");
+            		break;
+            	}
+            	t2=t1;t1=t;
+            	//System.err.println("t= "+t);
                 Collision firstCollision = null;
 
                 // On cherche toutes les collisions qui vont arriver pendant ce tour
                 for (int i = 0; i < pods.length; ++i) {
-                	Collision w=pods[i].getWall(t);
+                	//System.err.println("pod "+i);
+                	Collision w=pods[i].getWall(t,lastCollision);
                 	if (w != null && w.t + t < 1.0 && (firstCollision == null || w.t < firstCollision.t)) {
                         firstCollision = w;
+                        lastCollision=w;
                     }
+                	//System.err.println("After wall");
                     // Collision avec un autre pod ?
                     for (int j = i + 1; j < pods.length; ++j) {
-                        Collision col = pods[i].collision(pods[j]);
+                        Collision col = var ? pods[i].collision2(pods[j],lastCollision):pods[i].collision(pods[j],lastCollision) ;
 
                         // Si la collision arrive plus tôt que celle qu'on, alors on la garde
                         if (col != null && col.t + t < 1.0 && (firstCollision == null || col.t < firstCollision.t)) {
                             firstCollision = col;
+                            lastCollision= col;
                         }
                     }
+                    //System.err.println("After col loop pod");
 
                     // flag
                     PlayerState curPlayer = i<2? p1:p2;
@@ -161,6 +175,7 @@ class player1 {
                     if (flagT>=0 && flagT + t < 1.0 && (firstCollision == null || flagT < firstCollision.t)) {
                         curPlayer.captureFlag(pods[i]);
                     }
+                    //System.err.println("After flag");
                 }
 
                 if (firstCollision == null) {
@@ -172,26 +187,38 @@ class player1 {
                     // Fin du tour
                     t = 1.0;
                 } else {
+                	System.err.println(firstCollision);
                     // On bouge les pods du temps qu'il faut pour arriver sur l'instant `t` de la collision
                     for (int i = 0; i < pods.length; ++i) {
-                        pods[i].simpleMove(firstCollision.t - t);
+                        pods[i].simpleMove(firstCollision.t);
                     }
-
+                    System.err.println("Resolving "+firstCollision);
                     // On joue la collision
                     firstCollision.execute();
 
                     t += firstCollision.t;
                 }
-            }
+            } //while t<1
 
             // On arrondi les positions et on tronque les vitesses pour tout le monde
             for (int i = 0; i < pods.length; ++i) {
                 pods[i].endTurn();
-                System.out.println(pods[i]);
+                //System.err.println(pods[i]);
             }
+            turn++;
         }
         public boolean equals(Object o) { State s=(State)o; return p1.equals(s.p1)&&p2.equals(s.p2);}
-        public String toString() { return p1.toString()+"\n"+p2.toString();}
+        public String toString() { return "Turn "+turn+"\n"+p1.toString()+"\n"+p2.toString();}
+        public String toInitString() {
+        	StringBuffer sb= new StringBuffer();
+        	sb.append(p2.flagx+" "+p2.flagy+"\\n");
+        	sb.append(p1.flagx+" "+p1.flagy+"\\n");
+        	sb.append(p1.p1+"\\n");
+        	sb.append(p1.p2+"\\n");
+        	sb.append(p2.p1+"\\n");
+        	sb.append(p2.p2+"\\n");
+        	return sb.toString();
+        }
         
     }
     static class Pod extends Point{
@@ -199,13 +226,15 @@ class player1 {
         double vy;
         int boost=0;
         boolean hasFlag=false;
+        PlayerState ps=null;
         boolean canBoost() { return !hasFlag && boost==0;}
-        void initPod(Scanner s) {
+        void initPod(Scanner s,PlayerState ps) {
             x=s.nextInt();
             y=s.nextInt();
             vx=s.nextInt();
             vy=s.nextInt();
             hasFlag=s.nextInt()==1;
+            this.ps=ps;
         }
         Pod() {}
         Pod(Pod p) {
@@ -259,33 +288,26 @@ class player1 {
         }
         
         
-        Collision getWall(double t) {
+        Collision getWall(double t,Collision last) {
+        	Wall lastw = (last!= null && last.p1 == this && last.p2==null ) ? last.wall : Wall.NONE; // derive last wall if any to avoid double collision
         	double smallest=2.0;
         	double nx=x+vx*(1.0-t),ny=y+vy*(1.0-t);
-        	if(x==400 && nx<400) 	{ return Collision.wallCollision(t, true, this);}
-        	if(x==9600 && nx>9600) 	{ return Collision.wallCollision(t, true, this);}
-        	if ( (y==400 && ny <400) || (y==7600 && ny >7600)) {Collision.wallCollision(t, false, this);}
-            int best=-1;
+        	if(x==400 && nx<400 && lastw !=Wall.LEFT) 	{ return Collision.wallCollision(t, Wall.LEFT, this);}
+        	if(x==9600 && nx>9600 && lastw !=Wall.RIGHT) 	{ return Collision.wallCollision(t, Wall.RIGHT, this);}
+        	if ( (y==400 && ny <400) && lastw !=Wall.TOP)  { return Collision.wallCollision(t, Wall.TOP, this);}
+        	if( (y==7600 && ny >7600) && lastw !=Wall.BOTTOM) {return Collision.wallCollision(t, Wall.BOTTOM, this);}
+        	
+        	Wall best=Wall.NONE;
             double col=get_line_intersection(x,y,nx,ny,400, 400, 9600, 400);
-            if(col>0 && col <smallest) {smallest=col;best=0;}
+            if(col>0 && col <smallest && lastw !=Wall.TOP) {smallest=col;best=Wall.TOP;}
             col = get_line_intersection(x,y,nx,ny,400, 400, 400, 7600);
-            if(col>0 && col <smallest) {smallest=col;best=1;}
+            if(col>0 && col <smallest && lastw !=Wall.LEFT) {smallest=col;best=Wall.LEFT;}
             col = get_line_intersection(x,y,nx,ny,9600, 400, 9600, 7600);
-            if(col>0 && col <smallest) {smallest=col;best=2;}
+            if(col>0 && col <smallest && lastw !=Wall.RIGHT) {smallest=col;best=Wall.RIGHT;}
             col = get_line_intersection(x,y,nx,ny,400, 7600, 9600, 7600);
-            if(col>0 && col <smallest) {smallest=col;best=3;}
+            if(col>0 && col <smallest && lastw !=Wall.BOTTOM) {smallest=col;best=Wall.BOTTOM;}
             
-            if(best>=0) {
-            	boolean vertical=false;
-            	//x+=vx*(1.0-t)*smallest;y+=vy*(1.0-t)*smallest;
-            	switch(best) {
-            		case 1:
-            		case 2:
-            			vertical=true;
-            	}
-            	//System.err.println("Collision"+(t+(1.0-t)*smallest));
-            	return Collision.wallCollision((1.0-t)*smallest,vertical,this);
-            }
+            if(best!= Wall.NONE) return Collision.wallCollision((1.0-t)*smallest,best,this);
             return null;
         }
         double getWall(double t,PlayerState ps) {
@@ -334,17 +356,43 @@ class player1 {
             return p.x==x && p.y==y && p.vx==vx && p.vy==vy && p.hasFlag==hasFlag;
         }
         final static int SR=2*400*400;
-       
-        Collision collision(Pod u) {
+        
+        Collision collision2(Pod u,Collision last) {
+        	double dist = dist2(this,u);
+        	if (dist < SR) { // Les objets sont déjà l'un sur l'autre. On a donc une collision immédiate
+            	//System.err.println(last+"\n>"+this+"\n>"+u);
+            	if ( !(last != null && ( (this == last.p1 &&  u==last.p2) ||( this == last.p2 && u==last.p1)) ) ) // different collision than last
+            		return new Collision(this, u, 0.0);
+            	else
+            		System.err.println("Avoided fake collision");
+        	}
+        	double dvx=u.vx-vx,dvy=u.vy-vy,dx=u.x-x,dy=u.y-y;
+        	double scal=dx*dvx+dy*dvy;
+        	if(  scal>=0) { //v divergente
+        		return null;
+        	} else { 
+        		double a=dvx*dvx+dvy*dvy;
+        		double b= 2*scal;
+        		double c = dist - SR;
+        		double t = (-b-Math.sqrt(b*b-4*a*c))/(2*a);
+        		return t<=1 ? new Collision(this,u,t):null;
+        	}
+        }
+        
+        
+        Collision collision(Pod u,Collision last) {
             // Distance carré
             double dist = dist2(this,u);
-        
+            
         
             // On prend tout au carré pour éviter d'avoir à appeler un sqrt inutilement. C'est mieux pour les performances
         
-            if (dist < SR) {
-                // Les objets sont déjà l'un sur l'autre. On a donc une collision immédiate
-                return new Collision(this, u, 0.0);
+            if (dist < SR) { // Les objets sont déjà l'un sur l'autre. On a donc une collision immédiate
+            	//System.err.println(last+"\n>"+this+"\n>"+u);
+            	if ( !(last != null && ( (this == last.p1 &&  u==last.p2) ||( this == last.p2 && u==last.p1)) ) ) // different collision than last
+            		return new Collision(this, u, 0.0);
+            	else
+            		System.err.println("Avoided fake collision");
             }
         
             // Optimisation. Les objets ont la même vitesse ils ne pourront jamais se rentrer dedans
@@ -393,8 +441,8 @@ class player1 {
         
                 // Temps nécessaire pour atteindre le point d'impact
                 double t = pdist / length;
-        
-                return new Collision(this, u, t);
+                if ( !(last != null && ( (this == last.p1 &&  u==last.p2) ||( this == last.p2 && u==last.p1)) ) ) // different collision than last
+                	return new Collision(this, u, t);
             }
         
             return null;
@@ -487,61 +535,48 @@ class player1 {
             return new Point(cx, cy);
         }
     }
+    enum Wall { NONE,TOP,BOTTOM,LEFT,RIGHT; }
     static class Collision {
-    	static Collision wallCollision(double t,boolean vertical,Pod p) {
+    	
+    	public String toString() {
+    		if(p2==null) {return "Wall("+wall+") "+p1;} 
+    		else {return p1+" vs "+p2;}
+    	}
+    	static Collision wallCollision(double t,Wall w,Pod p) {
     		Collision res=new Collision();
     		res.t=t;
     		res.p1=p;
-    		res.vertical=vertical;
+    		res.wall=w;
     		return res;
     	}
     	Collision() {}
         Pod p1=null,p2=null;
-        boolean vertical;
+        Wall wall=Wall.NONE;
         double t;
         Collision(Pod p1,Pod p2,double t) { this.p1=p1;this.p2=p2;this.t=t;}
         public void execute(){
         	if(p1!= null && p2!=null) {
+        		double vn1=p1.vx*p1.vx+p1.vy*p1.vy;
+        		double vn2=p2.vx*p2.vx+p2.vy*p2.vy;
         		double svx=p1.vx,svy=p1.vy;
         		p1.vx=p2.vx;p1.vy=p2.vy;
         		p2.vx=svx;p2.vy=svy;
-//        	 // Si les masses sont égales, le coefficient sera de 2. Sinon il sera de 11/10
-//            double mcoeff = 2;
-//
-//            double nx = p1.x - p2.x;
-//            double ny = p1.y - p2.y;
-//
-//            // Distance au carré entre les 2 pods. Cette valeur pourrait être écrite en dure car ce sera toujours 800²
-//            final int nxnysquare = 800*800;
-//
-//            double dvx = p1.vx - p2.vx;
-//            double dvy = p1.vy - p2.vy;
-//
-//            // fx et fy sont les composantes du vecteur d'impact. product est juste la pour optimiser
-//            double product = nx*dvx + ny*dvy;
-//            double fx = (nx * product) / (nxnysquare * mcoeff);
-//            double fy = (ny * product) / (nxnysquare * mcoeff);
-//
-//            // On applique une fois le vecteur d'impact à chaque pod proportionnellement à sa masse
-//            p1.vx -= fx ;
-//            p1.vy -= fy ;
-//            p2.vx += fx ;
-//            p2.vy += fy ;
-//
-//            // Si la norme du vecteur d'impact est inférieur à 120, on change sa norme pour le mettre à 120
-//            double impulse = Math.sqrt(fx*fx + fy*fy);
-//            if (impulse < 120.0) {
-//                fx = fx * 120.0 / impulse;
-//                fy = fy * 120.0 / impulse;
-//            }
-//
-//            // On applique une deuxième fois le vecteur d'impact à chaque pod proportionnellement à sa masse
-//            p1.vx -= fx ;
-//            p1.vy -= fy ;
-//            p2.vx += fx ;
-//            p2.vy += fy ;
+        		
+        		if(p1.ps != p2.ps) {
+        			if(p1.hasFlag && vn1 < vn2) { 
+        				p1.hasFlag=false;
+        				p1.ps.flagx= p1.ps.myBase == BASE_RIGHT ? BASE_LEFT:BASE_RIGHT;
+        				p1.ps.flagy= 4000;
+        			}
+        			if(p2.hasFlag && vn2 < vn1) {
+        				p2.hasFlag=false;
+        				p2.ps.flagx= p2.ps.myBase == BASE_RIGHT ? BASE_LEFT:BASE_RIGHT;
+        				p2.ps.flagy= 4000;
+        			}
+        		}
+
         	} else { //Wall collision
-        		if(vertical) p1.vx=-p1.vx;
+        		if(wall==Wall.LEFT || wall == Wall.RIGHT) p1.vx=-p1.vx;
         		else p1.vy=-p1.vy;
         	}
         }

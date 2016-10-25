@@ -1,9 +1,10 @@
 import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 
-public class Hypersonic implements GameState {
+public class Hypersonic implements GameState<Hypersonic.UI> {
 	
 	final int width=13;
 	final int height=11;
@@ -40,11 +41,6 @@ public class Hypersonic implements GameState {
 		return sb.toString();
 	}
 	
-	@Override
-	public boolean setPlayerAction(int id, String s) {
-		return true;
-		
-	}
 	
 	
 
@@ -77,6 +73,35 @@ public class Hypersonic implements GameState {
 	}
 	@Override
 	public void draw(Graphics2D g) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public boolean readActions(Scanner s, int id) {
+		return false;
+		
+	}
+	@Override
+	public GameState<UI> save() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public int resolveActions() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+	@Override
+	public UI createAndShowGUI() {
+		return null;
+		
+	}
+	
+	static class UI {
+	}
+
+	@Override
+	public void draw(UI ui) {
 		// TODO Auto-generated method stub
 		
 	}
