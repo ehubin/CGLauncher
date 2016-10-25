@@ -1,4 +1,3 @@
-import java.awt.datatransfer.StringSelection;
 import java.util.Scanner;
 
 public class test {
