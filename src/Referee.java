@@ -4,28 +4,32 @@ import java.io.OutputStream;
 import java.lang.ProcessBuilder.Redirect;
 import java.util.Scanner;
 
-public class Referee {
+public class Referee<State extends GameState> {
 	static String player1Class="player1";
 	static String player2Class="player2";
 	
 	
 	PlayerListener pl1,pl2;
 	OutputStream os1,os2;
-	GameState<?> gs;
-	public Referee(GameState<?> state) { gs=state;}
+	State gs;
+	GameUI<State> ui;
+	public Referee(State state) { gs=state;}
 	
 	public static void main(String[] arg) {
-		Referee gm = new Referee(new UnleashTheGeek());		
+		Referee<UnleashTheGeek> gm = new Referee<UnleashTheGeek>(new UnleashTheGeek());	
+		gm.gs.init();
+		gm.ui = new UnleashTheGeek.utgUI(gm.gs);
 		gm.start();
 	}
 	
 	public void start() {
-		gs.init();
+		
 		//spawn UI
 		try {
 			javax.swing.SwingUtilities.invokeAndWait(new Runnable() {
 			    public void run() {
-			       gs.createAndShowGUI();
+			       ui.pack();
+			       ui.setVisible(true);
 			    }
 			});
 		} catch (Exception e1) {
@@ -54,6 +58,7 @@ public class Referee {
 		pl1t.start();
 		Thread pl2t=new Thread(pl2);
 		pl2t.start();
+		
 		try{
 			os1.write(gs.getInitStr(0).getBytes());
 			os1.flush();
@@ -61,6 +66,7 @@ public class Referee {
 			os2.flush();
 		}
 		catch(Exception e) { e.printStackTrace(System.err);}
+		
 		play();
 	}
 	
@@ -70,6 +76,7 @@ public class Referee {
 	public void play() {
 		try {
 			gs.startTurn();
+			System.err.println(gs.getStateStr(0));
 			os1.write(gs.getStateStr(0).getBytes());
 			os1.flush();	
 			os2.write(gs.getStateStr(1).getBytes());
@@ -103,7 +110,7 @@ public class Referee {
 			try {
 				while(gs.getResult() == GameState.UNDECIDED) {
 					if(gs.readActions(sc,id)) { // all players gave their actions
-						gs.save();
+						ui.addState((State)gs.save());
 						gs.resolveActions();
 						//for(ChangeListener cl:ll) cl.stateChanged(new ChangeEvent(saved));
 						if(gs.getResult() == GameState.UNDECIDED) play(); //next turn

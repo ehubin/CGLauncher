@@ -3,30 +3,20 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Shape;
-import java.awt.event.ActionEvent;
 import java.awt.geom.Ellipse2D;
-import java.util.ArrayList;
 import java.util.Scanner;
 
-import javax.swing.AbstractAction;
-import javax.swing.JButton;
-import javax.swing.JFrame;
 import javax.swing.JPanel;
-import javax.swing.JSlider;
 import javax.swing.JTextArea;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 
 
 
 
-class UnleashTheGeek implements GameState<UnleashTheGeek.utgUI> {
-	public static utgUI theUI=null;
+class UnleashTheGeek implements GameState {
 	player1.State s=null;
 	player1.Action[] a=new player1.Action[4];
 	
@@ -178,9 +168,8 @@ class UnleashTheGeek implements GameState<UnleashTheGeek.utgUI> {
 		}
 
 		@Override
-		public GameState<utgUI> save() {
+		public GameState save() {
 			UnleashTheGeek utg=new UnleashTheGeek(this);
-			theUI.addSave(utg);
 			return utg;
 			
 		}
@@ -195,92 +184,44 @@ class UnleashTheGeek implements GameState<UnleashTheGeek.utgUI> {
 		}
 		
 		
-	
-		public utgUI createAndShowGUI() {
-			if(theUI==null) theUI=new utgUI(this);
-			return theUI;
-		}
-		
-		public void draw(utgUI ui) {
-			StringBuffer sb=new StringBuffer();
-			for(player1.Action a:a) sb.append(a+"\n");
-			sb.append("\n\n");
-			for(player1.Action act:a) sb.append("new player1.Action("+act.angle+","+act.thrust+"),\n");
-			ui.actions.setText(sb.toString());
-			ui.state.setText(s.toString()+"\n\n"+s.toInitString());
-			ui.ip.setState(this);
-			ui.ip.repaint();
-			
-		}
-		
-		
-		
-		public static class utgUI {
-			JTextArea  state=new JTextArea(),actions=new JTextArea();
-			JSlider slider=new JSlider(0,0,0);
-			ImagePanel ip=new ImagePanel();
-			boolean sliderTouched=false;
-			ArrayList<UnleashTheGeek> savedState = new ArrayList<UnleashTheGeek>();
+		@SuppressWarnings("serial")
+		public static class utgUI extends GameUI<UnleashTheGeek> {
+			private JTextArea  state,actions;
 
 			
-			@SuppressWarnings("serial")
 			utgUI(UnleashTheGeek utg) {
-				ip.setState(utg);
-		        //Create and set up the window.
-		        JFrame frame = new JFrame("Unleash the geek");
-		        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		        Container c=frame.getContentPane();
-		        JPanel p=new JPanel(new FlowLayout()),slide=new JPanel(new FlowLayout());
-		        //Add the ubiquitous "Hello World" label.
-		        c.add(ip,BorderLayout.CENTER);
-		        c.add(slide,BorderLayout.PAGE_END);
-		        slide.add(new JButton(new AbstractAction("prev") {			
-					@Override
-					public void actionPerformed(ActionEvent e) {
-						int v=slider.getValue(),m=slider.getMinimum();
-						if(v>m) slider.setValue(v-1);
-					}
-				}));
-		        slide.add(slider);
-		        slide.add(new JButton(new AbstractAction("next") {
-					@Override
-					public void actionPerformed(ActionEvent e) {
-						int v=slider.getValue(),m=slider.getMaximum();
-						if(v<m) slider.setValue(v+1);
-						
-					}
-				}));
-		        p.add(state);
-		        p.add(actions);
-		        state.setPreferredSize(new Dimension(200, 500));
-		        actions.setPreferredSize(new Dimension(200, 500));
-		        c.add(p,BorderLayout.LINE_END);
-		        //c.add(actions,BorderLayout.PAGE_END);
-		        slider.addChangeListener(new ChangeListener() {
-					
-					@Override
-					public void stateChanged(ChangeEvent e) {
-						System.err.println(" Slider:"+ slider.getValue());
-						if(slider.getValue()>0) sliderTouched=true;
-						if(sliderTouched) javax.swing.SwingUtilities.invokeLater(new Runnable() {
-							
-				            public void run() {UnleashTheGeek tmpState=savedState.get(slider.getValue()); tmpState.draw(utgUI.this);}
-					
-						});
-					}
-				});
+				super(utg,"Unleash the geek");
+				
+				
+		        
+		        
+		       
+		        
 
-		        //Display the window.
-		        frame.pack();
-		        frame.setVisible(true);
 			}
-			
-			void addSave(UnleashTheGeek utg) {
-				savedState.add(utg);
-				slider.setMaximum(savedState.size()-1);
-				if(!sliderTouched) javax.swing.SwingUtilities.invokeLater(new Runnable() {
-					public void run() {utg.draw(utgUI.this);}
-				});
+			public void initUI() {
+				Container c= getContentPane();
+				c.setLayout(new BorderLayout());
+				c.add(getGamePanelWithControls(new Dimension(500,400),new Dimension(10000,8000)),BorderLayout.CENTER);
+				 //Add the ubiquitous "Hello World" label.
+		        JPanel jp =new JPanel();
+		        c.add(jp,BorderLayout.LINE_END);
+		        state=new JTextArea();
+		        actions = new JTextArea();
+		        jp.add(state);
+		        jp.add(actions);
+		        state.setPreferredSize(new Dimension(300, 500));
+		        actions.setPreferredSize(new Dimension(300, 500));
+		        
+			}
+			public void setCurrentState(UnleashTheGeek utg) {
+				super.setCurrentState(utg);				
+				StringBuffer sb=new StringBuffer();
+				for(player1.Action a:utg.a) sb.append(a+"\n");
+				sb.append("\n\n");
+				for(player1.Action act:utg.a) sb.append("new player1.Action("+act.angle+","+act.thrust+"),\n");
+				actions.setText(sb.toString());
+				state.setText(utg.s.toString()+"\n\n"+utg.s.toInitString());
 			}
 			
 		}

@@ -135,7 +135,7 @@ class player1 {
         }
         void simulate(Action[]a) {simulate(a,false);}
         void simulate(Action[] a,boolean var) {
-        	System.err.println("Start simulate");
+        	//System.err.println("Start simulate");
         	p1.p1.updateSpeed(a[0]);
             p1.p2.updateSpeed(a[1]);
             p2.p1.updateSpeed(a[2]);
@@ -163,7 +163,7 @@ class player1 {
                 	//System.err.println("After wall");
                     // Collision avec un autre pod ?
                     for (int j = i + 1; j < pods.length; ++j) {
-                        Collision col = var ? pods[i].collision2(pods[j],lastCollision):pods[i].collision(pods[j],lastCollision) ;
+                        Collision col = pods[i].collision2(pods[j],lastCollision) ;
 
                         // Si la collision arrive plus tôt que celle qu'on, alors on la garde
                         if (col != null && col.t + t < 1.0 && (firstCollision == null || col.t < firstCollision.t)) {
@@ -193,13 +193,13 @@ class player1 {
                     t = 1.0;
                 } else {
                 	lastCollision=firstCollision;
-                	System.err.println(firstCollision);
+                	//System.err.println(firstCollision);
                     // On bouge les pods du temps qu'il faut pour arriver sur l'instant `t` de la collision
                     for (int i = 0; i < pods.length; ++i) {
                         pods[i].simpleMove(firstCollision.t);
                     }
                     if(ll!= null) {ChangeEvent evt = new ChangeEvent(this); for(ChangeListener c:ll) c.stateChanged(evt);}
-                    System.err.println("Resolving "+firstCollision);
+                    //System.err.println("Resolving "+firstCollision);
                     // On joue la collision
                     firstCollision.execute();
                     if(ll!= null) {ChangeEvent evt = new ChangeEvent(this); for(ChangeListener c:ll) c.stateChanged(evt);}
@@ -250,6 +250,7 @@ class player1 {
             vx=p.vx;
             vy=p.vy;
             hasFlag=p.hasFlag;
+            ps=p.ps;
         }
         void updateSpeed(Action a){
         	double vtx=a.thrust*Math.cos(a.angle);
@@ -258,6 +259,15 @@ class player1 {
         }
         void simpleMove(double t) {
         	x+= vx*t; y+=vy*t;
+        	//System.err.println("simplemove "+super.toString()+"==> "+ps);
+        	if(hasFlag) {
+        		if( ps!= null && ((ps.myBase == BASE_LEFT && x <= BASE_LEFT)|| (ps.myBase==BASE_RIGHT && x>= BASE_RIGHT)) ) {
+        			ps.nbFlagsCaptured++;
+        			ps.flagx=ps.myBase;
+        			ps.flagy=4000;
+        			hasFlag=false;
+        		}
+        	}
         }
         void endTurn() {
         	vx*=0.9;vy*=0.9;
@@ -370,8 +380,8 @@ class player1 {
             	//System.err.println(last+"\n>"+this+"\n>"+u);
             	if ( !(last != null && ( (this == last.p1 &&  u==last.p2) ||( this == last.p2 && u==last.p1)) ) ) // different collision than last
             		return new Collision(this, u, 0.0);
-            	else
-            		System.err.println("Avoided fake collision");
+            	//else
+            		//System.err.println("Avoided fake collision");
         	}
         	double dvx=u.vx-vx,dvy=u.vy-vy,dx=u.x-x,dy=u.y-y;
         	double scal=dx*dvx+dy*dvy;

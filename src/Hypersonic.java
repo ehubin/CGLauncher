@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Scanner;
 
 
-public class Hypersonic implements GameState<Hypersonic.UI> {
+public class Hypersonic implements GameState {
 	
 	final int width=13;
 	final int height=11;
@@ -81,28 +81,17 @@ public class Hypersonic implements GameState<Hypersonic.UI> {
 		return false;
 		
 	}
-	@Override
-	public GameState<UI> save() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+	
 	@Override
 	public int resolveActions() {
 		// TODO Auto-generated method stub
 		return 0;
 	}
 	@Override
-	public UI createAndShowGUI() {
+	public GameState save() {
+		// TODO Auto-generated method stub
 		return null;
-		
 	}
 	
-	static class UI {
-	}
 
-	@Override
-	public void draw(UI ui) {
-		// TODO Auto-generated method stub
-		
-	}
 }
