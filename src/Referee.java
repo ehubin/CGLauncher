@@ -106,6 +106,7 @@ public class Referee<State extends GameState> {
 			sc=new Scanner(is);
 			this.id=id;
 		}
+		@SuppressWarnings("unchecked")
 		public void run() {
 			try {
 				while(gs.getResult() == GameState.UNDECIDED) {
