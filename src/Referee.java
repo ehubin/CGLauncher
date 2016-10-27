@@ -16,10 +16,10 @@ public class Referee<State extends GameState> {
 	public Referee(State state) { gs=state;}
 	
 	public static void main(String[] arg) {
-		Referee<UnleashTheGeek> gm = new Referee<UnleashTheGeek>(new UnleashTheGeek());	
-		gm.gs.init();
-		gm.ui = new UnleashTheGeek.utgUI(gm.gs);
-		gm.start();
+		Referee<UnleashTheGeek> referee = new Referee<UnleashTheGeek>(new UnleashTheGeek());	
+		referee.gs.init();
+		referee.ui = new UnleashTheGeek.utgUI(referee.gs);
+		referee.start();
 	}
 	
 	public void start() {
