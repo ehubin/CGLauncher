@@ -40,7 +40,7 @@ class player1 {
         int myBase=-1;
         Pod p1,p2;
         int flagx,flagy;
-        PlayerState() { p1=new Pod();p2=new Pod();}
+        PlayerState() { p1=new Pod(this);p2=new Pod(this);}
         PlayerState(PlayerState s) {
             nbFlagsCaptured=s.nbFlagsCaptured;
             p1= new Pod(s.p1);
@@ -244,6 +244,7 @@ class player1 {
             this.ps=ps;
         }
         Pod() {}
+        Pod(PlayerState ps) {this.ps=ps;}
         Pod(Pod p) {
             x=p.x;
             y=p.y;
@@ -263,10 +264,12 @@ class player1 {
         	if(hasFlag) {
         		if( ps!= null && ((ps.myBase == BASE_LEFT && x <= BASE_LEFT)|| (ps.myBase==BASE_RIGHT && x>= BASE_RIGHT)) ) {
         			ps.nbFlagsCaptured++;
-        			ps.flagx=ps.myBase;
+        			ps.flagx=ps.myBase==BASE_LEFT ? BASE_RIGHT :BASE_LEFT;
         			ps.flagy=4000;
         			hasFlag=false;
+        			System.err.println("Flag captured");
         		}
+        		
         	}
         }
         void endTurn() {

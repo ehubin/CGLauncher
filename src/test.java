@@ -10,14 +10,14 @@ public class test {
 		player1.State state=new player1.State();
 		
 		state.readInput(new Scanner(
-				"-1 -1\n-1 -1\n1403 4625 -115 -89 0\n942 2150 -193 67 1\n2139 1252 188 279 0\n459 4847 -13 0 1\n"
+				"-1 -1\n9000 4000\n2036 2673 89 334 0\n1719 1021 643 26 0\n3901 2744 181 -42 0\n786 6595 -73 591 1\n"
 		));
 		utg.s=state;
 		UnleashTheGeek.utgUI ui = new UnleashTheGeek.utgUI(utg);
 		utg.a= new player1.Action[] 
-				{ 		new player1.Action(2.846946275859237,97),
-						new player1.Action(3.0844576701777253,500),
-						new player1.Action(2.4979515419973675,100),
+				{ 		new player1.Action(1.889700589067614,98),
+						new player1.Action(-2.3116992087575565,500),
+						new player1.Action(-2.528539797266605,100),
 						new player1.Action(3.141592653589793,100)
 				};
 		state.addChangeListener(new ChangeListener() {

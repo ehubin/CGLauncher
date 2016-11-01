@@ -76,7 +76,7 @@ public class Referee<State extends GameState> {
 	public void play() {
 		try {
 			gs.startTurn();
-			System.err.println(gs.getStateStr(0));
+			//System.err.println(gs.getStateStr(0));
 			os1.write(gs.getStateStr(0).getBytes());
 			os1.flush();	
 			os2.write(gs.getStateStr(1).getBytes());
@@ -117,7 +117,7 @@ public class Referee<State extends GameState> {
 						if(gs.getResult() == GameState.UNDECIDED) play(); //next turn
 						else {//save last turn
 							//for(ChangeListener cl:ll) cl.stateChanged(new ChangeEvent(gs.save()));
-							gs.save();
+							ui.addState((State)gs.save());
 						} 
 					}
 				}

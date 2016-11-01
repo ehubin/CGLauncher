@@ -35,7 +35,8 @@ class UnleashTheGeek implements GameState {
 
 	@Override
 	public int getResult() {
-		// TODO Auto-generated method stub
+		if(s.p1.nbFlagsCaptured >= 4) return(s.p2.nbFlagsCaptured >=4? DRAW:P1WINS);
+		if(s.p2.nbFlagsCaptured >= 4) return(P2WINS);
 		return s.turn <400 ? UNDECIDED:DRAW;
 	}
 
@@ -134,7 +135,7 @@ class UnleashTheGeek implements GameState {
 				default:
 			}
 			if(outcome != null) {
-				g.setFont(new Font("arial", Font.BOLD, 2000));
+				g.setFont(new Font("arial", Font.BOLD, 1500));
 				FontMetrics metrics = g.getFontMetrics();
 			    // Determine the X coordinate for the text
 			    int x = 5000 - (metrics.stringWidth(outcome) / 2);
