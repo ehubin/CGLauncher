@@ -10,6 +10,7 @@ import java.awt.Shape;
 import java.awt.geom.Ellipse2D;
 import java.util.Scanner;
 
+import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 
@@ -83,8 +84,7 @@ class UnleashTheGeek implements GameState {
 	}
 
 	
-	public boolean readActions(Scanner sc, int id) {
-		boolean res=false;
+	public void readActions(Scanner sc, int id) {
 		try{
 			//System.err.println("new action "+input);
 			player1.PlayerState ps= (id==0?s.p1:s.p2);
@@ -100,16 +100,13 @@ class UnleashTheGeek implements GameState {
 			player1.Action a2=new player1.Action(angle,thrust);
 			if(id==0) {
 				a[0]=a1;a[1]=a2;
-				res= a[3]==null?false:true;
 			} else {
 				a[2]=a1;a[3]=a2;
-				res= a[1]==null?false:true;
 			}
 			}
 			catch(Exception e) {
 				e.printStackTrace(System.err);
 			}
-			return res;
 	}
 	
 	
@@ -120,7 +117,7 @@ class UnleashTheGeek implements GameState {
 		}
 
 		@Override
-		public void draw(Graphics2D g) {
+		public void draw(Graphics2D g,JComponent jc) {
 			
 			g.setColor(Color.BLACK);
 			drawPlayer(s.p1,g);

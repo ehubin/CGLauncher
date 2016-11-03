@@ -62,7 +62,7 @@ public abstract class GameUI<State extends GameState> extends JFrame {
         panel.add(slide,BorderLayout.PAGE_END);
         
         // make sure slider only fires changEvents when value changes
- 		slider.setModel(new DefaultBoundedRangeModel() {
+ 		slider.setModel(new DefaultBoundedRangeModel(0,0,0,0) {
  			final ChangeEvent theOne=new ChangeEvent(this);
  			@Override
  		    public void setRangeProperties(int newValue, int newExtent, int newMin,int newMax, boolean adjusting) {
@@ -96,7 +96,7 @@ public abstract class GameUI<State extends GameState> extends JFrame {
     	javax.swing.SwingUtilities.invokeLater(new Runnable() {public void run() {
 			saved.add(gs);
 			slider.setMaximum(saved.size()-1);
-			if(!sliderTouched) {setCurrentState(gs); imagePanel.repaint();}
+			if(!sliderTouched) {slider.setValue(slider.getMaximum());setCurrentState(gs); imagePanel.repaint();}
 		}});
     }
     
@@ -111,7 +111,7 @@ public abstract class GameUI<State extends GameState> extends JFrame {
 	        super.paintComponent(g);
 	        Graphics2D gr=(Graphics2D)g;
 	        gr.setTransform(new AffineTransform(1.0*getWidth()/boardsize.width, 0, 0, 1.0*getHeight()/boardsize.height, 0, 0));
-	        if(currentState!= null) currentState.draw(gr); 
+	        if(currentState!= null) currentState.draw(gr,this); 
 	    }
     }
 

@@ -3,6 +3,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
+import javax.swing.JComponent;
+
 
 public class Hypersonic implements GameState {
 	
@@ -72,13 +74,12 @@ public class Hypersonic implements GameState {
 		
 	}
 	@Override
-	public void draw(Graphics2D g) {
+	public void draw(Graphics2D g,JComponent jc) {
 		// TODO Auto-generated method stub
 		
 	}
 	@Override
-	public boolean readActions(Scanner s, int id) {
-		return false;
+	public void readActions(Scanner s, int id) {
 		
 	}
 	

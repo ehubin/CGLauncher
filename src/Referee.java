@@ -5,20 +5,25 @@ import java.lang.ProcessBuilder.Redirect;
 import java.util.Scanner;
 
 public class Referee<State extends GameState> {
-	static String player1Class="player1";
-	static String player2Class="player2";
+	static String player1Class="CSBDummyPlayer";
+	static String player2Class="CSBDummyPlayer";
 	
 	
 	PlayerListener pl1,pl2;
 	OutputStream os1,os2;
 	State gs;
 	GameUI<State> ui;
+	boolean[] HasAction= {false,false};
 	public Referee(State state) { gs=state;}
 	
 	public static void main(String[] arg) {
-		Referee<UnleashTheGeek> referee = new Referee<UnleashTheGeek>(new UnleashTheGeek());	
+//		Referee<UnleashTheGeek> referee = new Referee<UnleashTheGeek>(new UnleashTheGeek());	
+//		referee.gs.init();
+//		referee.ui = new UnleashTheGeek.utgUI(referee.gs);
+		
+		Referee<CSB> referee = new Referee<CSB>(new CSB());	
 		referee.gs.init();
-		referee.ui = new UnleashTheGeek.utgUI(referee.gs);
+		referee.ui = new CSB.ui(referee.gs,"Coders strike back");
 		referee.start();
 	}
 	
@@ -76,7 +81,7 @@ public class Referee<State extends GameState> {
 	public void play() {
 		try {
 			gs.startTurn();
-			//System.err.println(gs.getStateStr(0));
+			System.err.println(gs.getStateStr(0));
 			os1.write(gs.getStateStr(0).getBytes());
 			os1.flush();	
 			os2.write(gs.getStateStr(1).getBytes());
@@ -110,7 +115,17 @@ public class Referee<State extends GameState> {
 		public void run() {
 			try {
 				while(gs.getResult() == GameState.UNDECIDED) {
-					if(gs.readActions(sc,id)) { // all players gave their actions
+					boolean IHaveAllActions=false;
+					gs.readActions(sc,id);
+					synchronized(gs) {
+						int other = id^1;
+						if(HasAction[other]) {
+							IHaveAllActions=true;
+							HasAction[0]=false;
+							HasAction[1]=false;
+						} else { HasAction[id]=true;} 
+					}
+					if(IHaveAllActions) { // all players gave their actions
 						ui.addState((State)gs.save());
 						gs.resolveActions();
 						//for(ChangeListener cl:ll) cl.stateChanged(new ChangeEvent(saved));
