@@ -26,7 +26,7 @@ class CSBDummyPlayer {
 
             if(!usedBoost && nextCheckpointDist >3000)  {System.out.println(nextCheckpointX + " " + nextCheckpointY +" BOOST");usedBoost=true;}
             else {
-                System.out.println(nextCheckpointX + " " + nextCheckpointY + (Math.abs(nextCheckpointAngle)<70 ? " 100":" 0"));
+            	 System.out.println(nextCheckpointX + " " + nextCheckpointY + " "+(Math.min(100,Math.max(0,100-(int)(1.2*(nextCheckpointAngle-18))))));
             }
         }
     }

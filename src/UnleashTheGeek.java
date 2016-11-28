@@ -10,7 +10,6 @@ import java.awt.Shape;
 import java.awt.geom.Ellipse2D;
 import java.util.Scanner;
 
-import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 
@@ -18,6 +17,7 @@ import javax.swing.JTextArea;
 
 
 class UnleashTheGeek implements GameState {
+	private static final long serialVersionUID = 1L;
 	player1.State s=null;
 	player1.Action[] a=new player1.Action[4];
 	
@@ -116,54 +116,7 @@ class UnleashTheGeek implements GameState {
 			
 		}
 
-		@Override
-		public void draw(Graphics2D g,JComponent jc) {
-			
-			g.setColor(Color.BLACK);
-			drawPlayer(s.p1,g);
-			g.setColor(Color.RED);
-			drawPlayer(s.p2,g);
-			
-			String outcome=null;
-			switch(getResult())  {
-				case DRAW: outcome="Draw";break;
-				case P1WINS: outcome="Player 1 wins";break;
-				case P2WINS: outcome="Player 2 wins";break;
-				default:
-			}
-			if(outcome != null) {
-				g.setFont(new Font("arial", Font.BOLD, 1500));
-				FontMetrics metrics = g.getFontMetrics();
-			    // Determine the X coordinate for the text
-			    int x = 5000 - (metrics.stringWidth(outcome) / 2);
-			    // Determine the Y coordinate for the text (note we add the ascent, as in java 2d 0 is top of the screen)
-			    int y = 4000 + metrics.getAscent()/2;
-				g.drawString(outcome, x, y);
-			}
-			
-		}
-		public void drawPlayer(player1.PlayerState ps,Graphics2D g) {
-			drawPod(ps.p1,g);
-			drawPod(ps.p2,g);
-			final int rad =250;
-			if(ps.flagx != -1) { // flag is in the arena
-				Shape theCircle = new Ellipse2D.Double(ps.flagx-rad,ps.flagy-rad, 2*rad, 2*rad);
-				g.setStroke(new BasicStroke(50));
-			    g.draw(theCircle);
-				g.setStroke(new BasicStroke(1));
-			}
-		}
 		
-		public void drawPod(player1.Pod p,Graphics2D g) {
-			final int rad=400;
-			final float coeff=5.f;
-			//System.err.println(p.x+" "+p.vx+" "+p.y+" "+p.vy);
-			Shape theCircle = new Ellipse2D.Double(p.x-rad,p.y-rad, 2*rad, 2*rad);
-			if (p.hasFlag) g.setStroke(new BasicStroke(50));
-		    g.draw(theCircle);
-		    g.drawLine((int)p.x, (int)p.y,(int)( (p.x+coeff*p.vx)),(int)((p.y+coeff*p.vy)));
-		    if (p.hasFlag) g.setStroke(new BasicStroke(1));
-		}
 
 		@Override
 		public GameState save() {
@@ -196,6 +149,55 @@ class UnleashTheGeek implements GameState {
 		       
 		        
 
+			}
+			
+			@Override
+			public void draw(Graphics2D g) {
+				player1.State s = currentState.s;
+				g.setColor(Color.BLACK);
+				drawPlayer(s.p1,g);
+				g.setColor(Color.RED);
+				drawPlayer(s.p2,g);
+				
+				String outcome=null;
+				switch(currentState.getResult())  {
+					case DRAW: outcome="Draw";break;
+					case P1WINS: outcome="Player 1 wins";break;
+					case P2WINS: outcome="Player 2 wins";break;
+					default:
+				}
+				if(outcome != null) {
+					g.setFont(new Font("arial", Font.BOLD, 1500));
+					FontMetrics metrics = g.getFontMetrics();
+				    // Determine the X coordinate for the text
+				    int x = 5000 - (metrics.stringWidth(outcome) / 2);
+				    // Determine the Y coordinate for the text (note we add the ascent, as in java 2d 0 is top of the screen)
+				    int y = 4000 + metrics.getAscent()/2;
+					g.drawString(outcome, x, y);
+				}
+				
+			}
+			public void drawPlayer(player1.PlayerState ps,Graphics2D g) {
+				drawPod(ps.p1,g);
+				drawPod(ps.p2,g);
+				final int rad =250;
+				if(ps.flagx != -1) { // flag is in the arena
+					Shape theCircle = new Ellipse2D.Double(ps.flagx-rad,ps.flagy-rad, 2*rad, 2*rad);
+					g.setStroke(new BasicStroke(50));
+				    g.draw(theCircle);
+					g.setStroke(new BasicStroke(1));
+				}
+			}
+			
+			public void drawPod(player1.Pod p,Graphics2D g) {
+				final int rad=400;
+				final float coeff=5.f;
+				//System.err.println(p.x+" "+p.vx+" "+p.y+" "+p.vy);
+				Shape theCircle = new Ellipse2D.Double(p.x-rad,p.y-rad, 2*rad, 2*rad);
+				if (p.hasFlag) g.setStroke(new BasicStroke(50));
+			    g.draw(theCircle);
+			    g.drawLine((int)p.x, (int)p.y,(int)( (p.x+coeff*p.vx)),(int)((p.y+coeff*p.vy)));
+			    if (p.hasFlag) g.setStroke(new BasicStroke(1));
 			}
 			public void initUI() {
 				Container c= getContentPane();

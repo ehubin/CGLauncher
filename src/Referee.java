@@ -6,10 +6,11 @@ import java.util.Scanner;
 
 public class Referee<State extends GameState> {
 	static String player1Class="CSBDummyPlayer";
-	static String player2Class="CSBDummyPlayer";
+	static String player2Class="CSBPlayer";
 	
 	
 	PlayerListener pl1,pl2;
+	Process p1,p2;
 	OutputStream os1,os2;
 	State gs;
 	GameUI<State> ui;
@@ -23,7 +24,7 @@ public class Referee<State extends GameState> {
 		
 		Referee<CSB> referee = new Referee<CSB>(new CSB());	
 		referee.gs.init();
-		referee.ui = new CSB.ui(referee.gs,"Coders strike back");
+		referee.ui = new CSB.ui(referee,"Coders strike back");
 		referee.start();
 	}
 	
@@ -49,8 +50,8 @@ public class Referee<State extends GameState> {
 		player2.redirectError(Redirect.INHERIT);
 		try {
 			
-			final Process p1=player1.start();
-			final Process p2=player2.start();
+			p1=player1.start();
+			p2=player2.start();
 			setPlayerStream(	p1.getInputStream(),
 								p1.getOutputStream(),
 								p2.getInputStream(),
@@ -74,7 +75,43 @@ public class Referee<State extends GameState> {
 		
 		play();
 	}
-	
+public void reset(State starting) {
+		gs = starting;
+		p1.destroy();
+		p2.destroy();
+		
+		
+		// start player processes
+		ProcessBuilder player1 = new ProcessBuilder("java","-cp","bin",player1Class);
+		player1.redirectError(Redirect.INHERIT);
+		ProcessBuilder player2 = new ProcessBuilder("java","-cp","bin",player2Class);
+		player2.redirectError(Redirect.INHERIT);
+		try {
+			p1=player1.start();
+			p2=player2.start();
+			setPlayerStream(	p1.getInputStream(),
+								p1.getOutputStream(),
+								p2.getInputStream(),
+								p2.getOutputStream());
+		} catch (IOException e) {
+			e.printStackTrace();
+		} 
+		
+		Thread pl1t=new Thread(pl1);
+		pl1t.start();
+		Thread pl2t=new Thread(pl2);
+		pl2t.start();
+		
+		try{
+			os1.write(gs.getInitStr(0).getBytes());
+			os1.flush();
+			os2.write(gs.getInitStr(1).getBytes());
+			os2.flush();
+		}
+		catch(Exception e) { e.printStackTrace(System.err);}
+		
+		play();
+	}
 	
 	
 	

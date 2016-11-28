@@ -1,13 +1,10 @@
-import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-import javax.swing.JComponent;
-
 
 public class Hypersonic implements GameState {
-	
+	private static final long serialVersionUID = 1L;
 	final int width=13;
 	final int height=11;
 	int[][] board= new int[width][height]; //floor=0 (.) box=1(0) wall=2(X)
@@ -70,11 +67,6 @@ public class Hypersonic implements GameState {
 
 	@Override
 	public void startTurn() {
-		// TODO Auto-generated method stub
-		
-	}
-	@Override
-	public void draw(Graphics2D g,JComponent jc) {
 		// TODO Auto-generated method stub
 		
 	}
