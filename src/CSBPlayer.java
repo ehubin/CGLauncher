@@ -1,17 +1,16 @@
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectOutputStream;
+import java.io.PrintStream;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Iterator;
+import java.util.PriorityQueue;
 import java.util.Random;
 import java.util.Scanner;
-
-
-
-import java.util.PriorityQueue;
 
 
 
@@ -23,18 +22,25 @@ class CSBPlayer {
 	static final double D2R=Math.PI/180;
 	final static Random Rnd=new Random(System.currentTimeMillis());
 	
+	// input/output magic for local invocation
+	 	
+	 	static InputStream in=System.in;
+	 	static PrintStream out=System.out;
+	 	
 	public static void main(String args[]) {
-		Scanner in = new Scanner(System.in);
-		ArrayList<State> state=new ArrayList<State>();
+		Scanner sc = new Scanner(in);
+		//ArrayList<State> state=new ArrayList<State>();
+		AI theAI=new AI();
 		State prev=null,cur,sim=null;
 		// game loop
 		while (true) {
-			cur = new State(in,prev,sim);
+			cur = new State(sc,prev,sim);
+			System.err.println("Angle-->"+cur.player[0].p1.angle);
 			if(sim!= null && !sim.equals(cur)) {
 				System.err.println(">"+sim.player[0].p1+"\n>>"+cur.player[0].p1+"\n");
 				try {System.err.println(toString(prev));} catch (Exception e) {e.printStackTrace();}
 			}
-			state.add(cur);
+			//state.add(cur);
 
 			Pod me = cur.player[0].p1;
 			Obj check = cur.player[0].next;
@@ -44,13 +50,17 @@ class CSBPlayer {
 			    System.err.println();
 				actionStr=check.x + " " + check.y + (Math.abs(me.angleDeg(check)-me.angle)<70 ? " 100":" 0");
 			}
+			Action[] best=theAI.getBestMove(cur);
+			actionStr= best[0].toString();
+			System.err.println(actionStr);
+			System.err.println("Best seq"+theAI.candidates.best());
 			// compute next move in sim and save cur into prev
-			cur.a[0] = Action.readFrom(new Scanner(actionStr));
+			cur.a[0] = Action.readFrom(new Scanner(actionStr),cur.player[0].p1);
 			cur.a[1] = new Action();
 			prev=new State(cur);
 			cur.simulate(); 
 			sim=cur;
-			System.out.println(actionStr);
+			out.println(actionStr);
 		}
 	}
 	@SuppressWarnings("serial")
@@ -63,7 +73,7 @@ class CSBPlayer {
 		public T getRandomItem() {
     		if(q==null) {
     			Field f=null;
-				try { f = this.getClass().getDeclaredField("queue"); } catch (Exception e) {
+				try {  f = this.getClass().getSuperclass().getDeclaredField("queue"); } catch (Exception e) {
 					e.printStackTrace();
 				}
     			f.setAccessible(true);
@@ -84,13 +94,15 @@ class CSBPlayer {
     }
 	public static class AI {
 	    static final int SET_SIZE=50,DEPTH=4;
-	    static final long MAX_TIME=95L;
+	    static final long MAX_TIME=100L;
 	    
 		myPQ<Sequence> candidates = new myPQ<Sequence>(SET_SIZE); 
 	    
 	    void generateDefaultActions(State s,int depth) {
+	    	candidates.clear();
 	    	Sequence seq= new Sequence(s);
-	    	for(int i=0;i<DEPTH;++i) seq.add(new Action[] { new Action(),new Action()});
+	    	for(int i=0;i<DEPTH;++i) seq.add(new Action[] { new Action(100,s.player[0].p1.angle*D2R),new Action(100,0)});
+	    	candidates.add(seq);
 	    	
 	    }
 	    Action[] getBestMove(State s) {
@@ -100,25 +112,38 @@ class CSBPlayer {
 	        double progress=0;
 	        do {
 	            Sequence seq = candidates.getRandomItem();
-	            Sequence tmp = new Sequence(seq);
-	            tmp.mutate(1.0*progress/MAX_TIME);
-	            if(tmp.getScore() > worse) {
+	            Sequence tmp = seq.mutate(1.0-(progress/MAX_TIME));
+	            if(tmp.getScore() >= worse) {
 	              if(candidates.size() == SET_SIZE) candidates.poll();
 	              candidates.add(tmp);
 	            }
 	            cur = System.currentTimeMillis();
 	            progress = cur-start;     
 	        } while(progress < MAX_TIME);
-	        return candidates.best().actions.get(0);
+	        System.err.println("CSBDummyPlayer time "+progress);
+	        return candidates.best().actions.get(0); // return first action of best sequence
 	    }
 	}
 	
 	public static class Sequence implements Comparable<Sequence> {
-	    ArrayList<Action[]> actions;
-	    State begin,end;
+		int A_CHANGE = 2*30;
+	    ArrayList<Action[]> actions=new ArrayList<Action[]>();
+		State begin,end;
 	    public int getScore() { return end.getScore(0); }
-	    void mutate(double progress) {
-	    	
+	    Sequence mutate(double progress) { // return new Sequence mutated from the current one
+	    	//System.err.println("Mutating ("+progress+") "+this);
+	    	Sequence res = new Sequence(this.begin);
+	    	for (Action[] a : actions) {
+	    		Action[] changed = new Action[a.length];
+	    		for(int i=0;i<a.length;++i) {
+	    			changed[i] = new Action(a[i]);
+	    			changed[i].angle = changed[i].angle+(progress*D2R*(Rnd.nextInt(A_CHANGE)-A_CHANGE/2) );
+	    		}
+	    		
+	    		res.add(changed);
+	    	}
+	    	//System.err.println("After Mutate "+res);
+	    	return res;
 	    }
 	    Sequence(State s) {
 	    	begin=s;
@@ -129,15 +154,17 @@ class CSBPlayer {
 	    	end.simulate();
 	    	actions.add(a);
 	    }
-	    Sequence(Sequence s) {
-	        actions = new ArrayList<Action[]> (s.actions.size());
-	        begin = s.begin;
-	        end=s.end;
-	        for(Action[] a:s.actions) actions.add( new Action[] { new Action(a[0]) , new Action(a[1]) });
-	    }
 		@Override
 		public int compareTo(Sequence o) {
 			return o.getScore()-this.getScore();
+		}
+		@Override
+		public String toString() {
+			StringBuffer sb = new StringBuffer();
+			sb.append("Score:"+getScore());sb.append("\n");
+			for(Action[] a:actions) {sb.append(a[0].angle/D2R); sb.append("\n");}
+			sb.append(end);
+			return sb.toString();
 		}
 	}
 	
@@ -176,7 +203,12 @@ class CSBPlayer {
 		}
 		
 		int getScore(int p) {
-		    return player[p].getScore();
+			Pt next = checkpoint[player[p].nextCheck];
+			int prevIdx = player[p].nextCheck ==0 ?checkpoint.length-1:player[p].nextCheck -1;
+			Pt prev= checkpoint[prevIdx];
+			int tot = prev.dist2(next);
+		    int res= player[p].getScore()+ (int) Math.round(20.0 * (tot-player[p].p1.dist2(next))/tot);
+		    return res;
 		}
 		
 		public State(Scanner in,State prev,State sim) {
@@ -213,9 +245,11 @@ class CSBPlayer {
 			
 			// @TODO implement proper intersection between pod and checkpoint 
 			for(PlayerState pl:player) {
-				if(pl.p1.dist2(checkpoint[pl.nextCheck]) <= CHECK_POD_DIST2 ) {
+				if(pl.p1.dist2(checkpoint[pl.nextCheck]) <= CHECK_POD_DIST2 && pl.p1.x >=0 && pl.p1.x <= WIDTH && pl.p1.y>=0 && pl.p1.y <= HEIGHT ) {
 					pl.nextCheck++;
-					if(pl.nextCheck >= NB_CHECKPOINT) { pl.nextCheck=0; pl.curLap++;}
+					if(pl.nextCheck >= NB_CHECKPOINT) { pl.nextCheck=0; }
+					if(pl.nextCheck == 1) pl.curLap++;
+					//System.err.println("New checkpoint:"+pl.nextCheck+" for:"+pl);
 				}
 			}
 		}
@@ -235,23 +269,25 @@ class CSBPlayer {
 	
 	public static class Action implements Serializable {
 		private static final long serialVersionUID = 1L;
-		static final int BOOST=600;
-		int tx,ty;
+		static final int BOOST=600,DIST=Integer.MAX_VALUE/2;
+		double angle;
 		int thrust;
 		boolean shield;
 		public Action(Action a) {
-			tx=a.tx; ty=a.ty; thrust = a.thrust; shield = a.shield;
+			angle=a.angle; thrust = a.thrust; shield = a.shield;
 		}
 		public Action() {}
+		public Action(int t,double a) {thrust=t;angle=a;}
 		void setThrust(int t) {
 			if(t<0 || t>100) return;
 			thrust=t;
 		}
-		static Action readFrom(Scanner in)
+		static Action readFrom(Scanner in,Pod p)
 		{
 			Action res = new Action();
-			res.tx=in.nextInt();
-			res.ty=in.nextInt();
+			int tx=in.nextInt();
+			int ty=in.nextInt();
+			res.angle=Math.atan2(ty-p.y,tx-p.x);
 			String t = in.next();
 			if(t.equals("SHIELD")) {res.shield=true; res.thrust=0;}
 			else if (t.equals("BOOST")) res.thrust=BOOST;
@@ -263,7 +299,7 @@ class CSBPlayer {
 		}
 		@Override
 		public String toString() {
-			return tx+","+ty+" "+ (thrust==BOOST?"BOOST":thrust);
+			return (int)(DIST*Math.cos(angle))+" "+(int)(DIST*Math.sin(angle))+" "+ (thrust==BOOST?"BOOST":thrust);
 		}
 	}
 	
@@ -285,7 +321,8 @@ class CSBPlayer {
 			return p1+"\n"+p2;
 		}
 		public int getScore() {
-			return 100* curLap+ 20*(nextCheck-1);
+			int nbcp = nextCheck == 0 ? State.NB_CHECKPOINT :nextCheck;
+			return 100* curLap+ 20*(nbcp-1);
 		}
 		
 	}
@@ -348,19 +385,23 @@ class CSBPlayer {
 		}
 		public Pod() { super(POD_RAD); }
 		public void simulate(Action a) {
-			double delta = deltaDeg(new Pt(a.tx,a.ty));
+			double delta = deltaDeg(a.angle);
+			
 			if(Math.abs(delta) <= MAX_ANGLE_CHG) angle+=delta;
-			else { angle += (delta>0? MAX_ANGLE_CHG : -MAX_ANGLE_CHG); System.err.println("Sature angle"+delta);}
+			else {
+				angle += (delta>0? MAX_ANGLE_CHG : -MAX_ANGLE_CHG); 
+				//System.err.println("Sature angle"+delta);
+			}
 			double dvx = vx + Math.cos(angle*D2R)*a.thrust;
 			double dvy = vy + Math.sin(angle*D2R)*a.thrust;
-			System.err.println("Before:"+x+","+y+"|"+vx+","+vy+"|"+angle);
+			//System.err.println("Before:"+x+","+y+"|"+vx+","+vy+"|"+angle);
 			x=(int)Math.round(x+dvx);
 			y=(int)Math.round(y+dvy);
-			System.err.println(x+","+y+"|"+dvx+"("+(Math.cos(angle*D2R)*a.thrust)+"),"+dvy+"("+(Math.sin(angle*D2R)*a.thrust)+")");
+			//System.err.println(x+","+y+"|"+dvx+"("+(Math.cos(angle*D2R)*a.thrust)+"),"+dvy+"("+(Math.sin(angle*D2R)*a.thrust)+")");
 			vx=(int)(dvx*0.85);
 			vy=(int)(dvy*0.85);
 			//angle=Math.rint(angle);
-			System.err.println("newV "+vx+","+vy);
+			//System.err.println("newV "+vx+","+vy);
 		}
 		public Pod(Pod p) {
 			super(p);
@@ -382,7 +423,14 @@ class CSBPlayer {
 			if(delta < -180) return delta +360;
 			return delta;
 		}
-	
+		// computes smallest angle to change my angle toward the direction in radian
+		public double deltaDeg(double direction) {
+
+			double delta = (direction/D2R-angle)%360;
+			if(delta >180) return delta - 360;
+			if(delta < -180) return delta +360;
+			return delta;
+		}
 		public String toString() {
 			return super.toString()+" "+angle+" "+vx+" "+vy;
 		}

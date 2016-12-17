@@ -57,7 +57,7 @@ public class CSB implements GameState,Serializable {
 		CSBPlayer.PlayerState p =s.player[id];
 		CSBPlayer.PlayerState other = id==0 ? s.player[1] :s.player[0];
 		CSBPlayer.Obj nextCheck = s.checkpoint[p.nextCheck];
-		sb.append(p.p1.x+" "+p.p1.y+" "+nextCheck.x+" "+nextCheck.y+" "+(int)Math.rint(p.p1.dist(nextCheck))+" "+p.p1.deltaDeg(nextCheck));
+		sb.append(p.p1.x+" "+p.p1.y+" "+nextCheck.x+" "+nextCheck.y+" "+(int)Math.rint(p.p1.dist(nextCheck))+" "+(int)Math.round(p.p1.deltaDeg(nextCheck)));
 		sb.append("\n"+other.p1.x+" "+other.p1.y+"\n");
 		return sb.toString();
 	}
@@ -69,7 +69,7 @@ public class CSB implements GameState,Serializable {
 
 	@Override
 	public void readActions(Scanner sc, int id) {
-		s.a[id] = CSBPlayer.Action.readFrom(sc);
+		s.a[id] = CSBPlayer.Action.readFrom(sc,s.player[id].p1);
 		System.err.println("Player "+(id+1)+" action: "+s.a[id]);
 	}
 

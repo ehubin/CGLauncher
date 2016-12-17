@@ -1,31 +1,53 @@
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+import java.io.PrintStream;
 import java.lang.ProcessBuilder.Redirect;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Scanner;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 public class Referee<State extends GameState> {
+	// WARNING: can't run the same class twice when in the same jvm
 	static String player1Class="CSBDummyPlayer";
 	static String player2Class="CSBPlayer";
-	
-	
-	PlayerListener pl1,pl2;
-	Process p1,p2;
+	BlockingQueue<Boolean> q= new ArrayBlockingQueue<Boolean>(2,true);
+	Thread pl1,pl2;
+	Wrapper p1,p2;
 	OutputStream os1,os2;
 	State gs;
+	long produce;
 	GameUI<State> ui;
+	boolean inProcess=false;
 	boolean[] HasAction= {false,false};
 	public Referee(State state) { gs=state;}
-	
+	public Referee(State state,boolean inProcess) { gs=state;this.inProcess=inProcess;}
 	public static void main(String[] arg) {
 //		Referee<UnleashTheGeek> referee = new Referee<UnleashTheGeek>(new UnleashTheGeek());	
 //		referee.gs.init();
 //		referee.ui = new UnleashTheGeek.utgUI(referee.gs);
 		
-		Referee<CSB> referee = new Referee<CSB>(new CSB());	
+		Referee<CSB> referee = new Referee<CSB>(new CSB(),true);	
 		referee.gs.init();
 		referee.ui = new CSB.ui(referee,"Coders strike back");
 		referee.start();
+		long prev=System.currentTimeMillis();
+		try { //play next turn on main thread (because of crappy pipe class)
+			while(true) {
+				synchronized(referee.q){referee.q.wait();}
+				referee.q.take();
+				long cur=System.currentTimeMillis();
+				System.err.println("turn time:"+(cur-prev));
+				prev=cur;
+				referee.play();
+			}
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public void start() {
@@ -41,30 +63,19 @@ public class Referee<State extends GameState> {
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}
-		
-		
+		startProcesses();
+	}
+	public void startProcesses() {	
 		// start player processes
-		ProcessBuilder player1 = new ProcessBuilder("java","-cp","bin",player1Class);
-		player1.redirectError(Redirect.INHERIT);
-		ProcessBuilder player2 = new ProcessBuilder("java","-cp","bin",player2Class);
-		player2.redirectError(Redirect.INHERIT);
-		try {
-			
-			p1=player1.start();
-			p2=player2.start();
-			setPlayerStream(	p1.getInputStream(),
-								p1.getOutputStream(),
-								p2.getInputStream(),
-								p2.getOutputStream());
-		} catch (IOException e) {
-			e.printStackTrace();
-		} 
-		
-		Thread pl1t=new Thread(pl1);
-		pl1t.start();
-		Thread pl2t=new Thread(pl2);
-		pl2t.start();
-		
+		p1=Wrapper.create(player1Class, inProcess);
+		p2=Wrapper.create(player2Class, inProcess);
+		p1.start();
+		p2.start();
+		pl1=new Thread(new PlayerListener(p1.getInputStream(),0));
+		pl2=new Thread(new PlayerListener(p2.getInputStream(),1));
+		os1=p1.getOutputStream();os2=p2.getOutputStream();
+		pl1.start();
+		pl2.start();		
 		try{
 			os1.write(gs.getInitStr(0).getBytes());
 			os1.flush();
@@ -77,40 +88,11 @@ public class Referee<State extends GameState> {
 	}
 public void reset(State starting) {
 		gs = starting;
-		p1.destroy();
-		p2.destroy();
-		
-		
-		// start player processes
-		ProcessBuilder player1 = new ProcessBuilder("java","-cp","bin",player1Class);
-		player1.redirectError(Redirect.INHERIT);
-		ProcessBuilder player2 = new ProcessBuilder("java","-cp","bin",player2Class);
-		player2.redirectError(Redirect.INHERIT);
-		try {
-			p1=player1.start();
-			p2=player2.start();
-			setPlayerStream(	p1.getInputStream(),
-								p1.getOutputStream(),
-								p2.getInputStream(),
-								p2.getOutputStream());
-		} catch (IOException e) {
-			e.printStackTrace();
-		} 
-		
-		Thread pl1t=new Thread(pl1);
-		pl1t.start();
-		Thread pl2t=new Thread(pl2);
-		pl2t.start();
-		
-		try{
-			os1.write(gs.getInitStr(0).getBytes());
-			os1.flush();
-			os2.write(gs.getInitStr(1).getBytes());
-			os2.flush();
-		}
-		catch(Exception e) { e.printStackTrace(System.err);}
-		
-		play();
+		pl1.interrupt();
+		pl2.interrupt();
+		p1.stop();
+		p2.stop();
+		startProcesses();
 	}
 	
 	
@@ -118,22 +100,18 @@ public void reset(State starting) {
 	public void play() {
 		try {
 			gs.startTurn();
-			System.err.println(gs.getStateStr(0));
+			System.err.println(">>"+gs.getStateStr(0)+"<<");
 			os1.write(gs.getStateStr(0).getBytes());
 			os1.flush();	
 			os2.write(gs.getStateStr(1).getBytes());
 			os2.flush();
+			System.err.println(">>state written<<");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		
 	}
 	
-	public void setPlayerStream(InputStream player1,OutputStream p1o,InputStream player2,OutputStream p2o) {
-		pl1=new PlayerListener(player1,0);pl2=new PlayerListener(player2,1);
-		os1=p1o;os2=p2o;
-		
-	}
 	public int getResult() // return 0 for draw ;1 for player 1 win; 2 for player 2 wins
 	{
 		return gs.getResult();
@@ -166,7 +144,10 @@ public void reset(State starting) {
 						ui.addState((State)gs.save());
 						gs.resolveActions();
 						//for(ChangeListener cl:ll) cl.stateChanged(new ChangeEvent(saved));
-						if(gs.getResult() == GameState.UNDECIDED) play(); //next turn
+						if(gs.getResult() == GameState.UNDECIDED) {
+							q.add(true); //next turn will be triggered on main thread
+							synchronized(q){q.notifyAll();}
+						}
 						else {//save last turn
 							//for(ChangeListener cl:ll) cl.stateChanged(new ChangeEvent(gs.save()));
 							ui.addState((State)gs.save());
@@ -177,6 +158,94 @@ public void reset(State starting) {
 			} catch (Error e) {
 				e.printStackTrace();
 			}
+		}
+	}
+	static abstract class Wrapper {
+		static ThreadWrapper tw=null;
+		static Wrapper create(String classname,boolean inProcess) {
+			if(inProcess) return tw==null? new ThreadWrapper(classname):tw;
+			else return new ProcessWrapper(classname);
+		}
+		public abstract void start();
+		public abstract void stop();
+		abstract InputStream getInputStream();
+		abstract OutputStream getOutputStream();
+	}
+	static class ProcessWrapper extends Wrapper {
+		String classname;
+		Process p;
+		public ProcessWrapper(String classname) {
+			this.classname=classname;
+		}
+
+		@Override
+		public void start() {
+			ProcessBuilder player = new ProcessBuilder("java","-cp","bin",classname);
+			player.redirectError(Redirect.INHERIT);
+			try {
+				p=player.start();
+			} catch (IOException e) {e.printStackTrace();}
+		}
+
+		@Override
+		public void stop() {
+			p.destroy();
+		}
+
+		@Override
+		public InputStream getInputStream() {
+			return p!=null? p.getInputStream():null;
+		}
+
+		@Override
+		public OutputStream getOutputStream() {
+			return p!=null? p.getOutputStream():null;
+		}
+		
+	}
+	
+	static class ThreadWrapper extends Wrapper implements Runnable{
+		Method main;
+		PipedInputStream is= new PipedInputStream();
+		PipedOutputStream os = new PipedOutputStream();
+		Thread t;
+
+		@Override
+		public void run() {
+			try {
+				main.invoke(null,(Object)new String[] {});
+			} catch(InvocationTargetException i) {
+				System.err.println("Player exception");
+				i.getCause().printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			
+		}
+		@Override
+		public InputStream getInputStream() {return is;}
+		@Override
+		public OutputStream getOutputStream() {return os;}
+
+		@SuppressWarnings({ "rawtypes", "unchecked" })
+		public ThreadWrapper(String classname) {
+			try {
+				Class c=Class.forName(classname);
+				main=c.getDeclaredMethod("main", String[].class);
+				c.getDeclaredField("in").set(null, new PipedInputStream(os));
+				c.getDeclaredField("out").set(null,new PrintStream(new PipedOutputStream(is),true));
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		@Override
+		public void start() {
+			t=new Thread(this);
+			t.start();
+		}
+		@Override
+		public void stop() {
+			t.interrupt();
 		}
 	}
 }
