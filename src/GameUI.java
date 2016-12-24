@@ -19,46 +19,40 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import javax.imageio.ImageIO;
-import javax.swing.AbstractAction;
-import javax.swing.DefaultBoundedRangeModel;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.JSlider;
+import javax.swing.*;
 import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 
 
 
 
 @SuppressWarnings("serial")
 public abstract class GameUI<State extends GameState> extends JFrame {
-	protected JSlider slider=new JSlider(0,0,0);
-	protected ImagePanel imagePanel= null;
-	protected JPanel buttonPanel=null;
+	JSlider slider=new JSlider(0,0,0);
+	ImagePanel imagePanel= null;
+	JPanel buttonPanel=null;
 	boolean sliderTouched=false;
-    ArrayList<State> saved=new ArrayList<State>();
+    ArrayList<State> saved=new ArrayList<>();
     State currentState=null;
     Referee<State> referee=null;
     
-    public GameUI(Referee<State> r,String title) {
+    GameUI(Referee<State> r,String title) {
     	super(title);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         referee = r;
     	initUI();
     	setCurrentState(r.gs);
     }
-    public GameUI(State gs,String title) {
+    GameUI(State gs,String title) {
     	//Create and set up the window.
         super(title);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
     	initUI();
     	setCurrentState(gs);
     }
     abstract public void initUI();
     abstract void draw(Graphics2D g); // draws the current state
     
-    public JPanel getGamePanelWithControls(Dimension dim,Dimension board) {
+    JPanel getGamePanelWithControls(Dimension dim,Dimension board) {
     	JPanel panel=new JPanel(new BorderLayout());
     	imagePanel=new ImagePanel(board, dim);
     	
@@ -89,7 +83,6 @@ public abstract class GameUI<State extends GameState> extends JFrame {
 				    Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 				    clipboard.setContents(selection, selection);
 				} catch (IOException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 				
@@ -111,17 +104,15 @@ public abstract class GameUI<State extends GameState> extends JFrame {
  		        super.fireStateChanged();
  		    }
  		});
-        slider.getModel().addChangeListener(new ChangeListener() {	
-			@Override
-			public void stateChanged(ChangeEvent evt)  {
+        slider.getModel().addChangeListener((evt -> {
 				System.err.println(" Slider:"+ slider.getValue()+" | "+evt+" | "+evt.getSource());
 				if(slider.getValue()>0) sliderTouched=true;
-				if(sliderTouched) javax.swing.SwingUtilities.invokeLater(new Runnable() {
-		            public void run() {setCurrentState(saved.get(slider.getValue())); imagePanel.repaint();}
+				if(sliderTouched) javax.swing.SwingUtilities.invokeLater(
+                        () -> {setCurrentState(saved.get(slider.getValue())); imagePanel.repaint();}
 			
-				});
+				);
 			}
-		});
+		));
         return panel;
     }
     // always executed on dispatcher thread. to be overloaded to update the UI components at state change
@@ -129,21 +120,21 @@ public abstract class GameUI<State extends GameState> extends JFrame {
     	currentState=s;
     }
     void addState(State gs) {
-    	javax.swing.SwingUtilities.invokeLater(new Runnable() {public void run() {
+    	javax.swing.SwingUtilities.invokeLater(() -> {
 			saved.add(gs);
 			slider.setMaximum(saved.size()-1);
 			if(!sliderTouched) {setCurrentState(gs); imagePanel.repaint();}
-		}});
+		});
     }
-    protected void resetState(State s) {
-    	javax.swing.SwingUtilities.invokeLater(new Runnable() {public void run() {
+    void resetState(State s) {
+    	javax.swing.SwingUtilities.invokeLater(() -> {
 			saved.clear();
     		saved.add(s);
 			slider.setMaximum(saved.size()-1);
 			sliderTouched=false;
 			setCurrentState(s); 
 			imagePanel.repaint();}
-		});
+		);
 		
 	}
     
@@ -171,7 +162,6 @@ public abstract class GameUI<State extends GameState> extends JFrame {
 		    g2d.dispose();
 		    return img;
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
     	return null;
@@ -188,7 +178,7 @@ public abstract class GameUI<State extends GameState> extends JFrame {
         private final int[] from;
         private final int[] to;
 
-        public ColorMapper(Color from,
+        ColorMapper(Color from,
                            Color to) {
             super(0, 4);
 
