@@ -71,13 +71,15 @@ class Player {
 		 * @param player
 		 * @return
 		 */
-		State apply(Action a, int player) {
+		
+		void applyForOnePlayer(Action a, int player) {
 			if (a.spreadPlanet > -1) {
 				Planet spreadFrom = planets[a.spreadPlanet];
 				if (spreadFrom.unit[player] > 4) {
 					for (Planet planet : spreadFrom.adj) {
 						incrementUnitForPlanet(planet, player);
 					}
+					spreadFrom.unit[player] -= 5;
 				}
 			}
 
@@ -85,8 +87,59 @@ class Player {
 				if (canAssign(planets[i], player))
 					incrementUnitForPlanet(planets[i], player);
 			}
-			return this;
 		}
+		
+		
+		State apply(Action a1, Action a2) {
+		  applyForOnePlayer(a1, 0);
+		  applyForOnePlayer(a2, 1);
+		  
+		  boolean[] decrementFirstPlayer = new boolean[nbP];
+		  boolean[] decrementSecondPlayer = new boolean[nbP];
+		  int counter = -1;
+		  for (Planet planet: planets) {
+		    counter++;
+		    int drawCount = 0;
+		    int player0WinsCount = 0;
+		    int adjCount = planet.adj.length;
+		    for (Planet adjPlanet: planet.adj) {
+		      if (adjPlanet.draw()) {
+		        drawCount++;
+		      }
+		      else if (adjPlanet.firstPlayerWins()) {
+		        player0WinsCount++;
+		      }
+		    }
+		    if (player0WinsCount == adjCount - drawCount) {
+		      // this is a perfect draw .. do nothing
+		      continue;
+		    }
+		    if (player0WinsCount > adjCount - drawCount) {
+		      decrementFirstPlayer[counter] = true;
+		    } else {
+		      decrementSecondPlayer[counter] = true;
+		    }
+		  }
+		  
+		  for (int i = 0; i < nbP; i++) {
+		    if (decrementFirstPlayer[i]) {
+		      decrementUnit(planets[i],0);
+		    }
+		    if (decrementSecondPlayer[i]) {
+          decrementUnit(planets[i],1);
+        }
+		  }
+		  
+		  turn+=2;
+		  return this;
+		}
+		
+		private void decrementUnit(Planet planet, int player) {
+		  if (planet.unit[player] > 0) {
+		    planet.unit[player]--;
+		  }
+		}
+
 
 		private void incrementUnitForPlanet(Planet planet, int player) {
 			if (planet.tolerance[player] > 0) {
@@ -125,6 +178,14 @@ class Player {
 			unit[1] = in.nextInt();
 			tolerance[1] = in.nextInt();
 			in.nextInt(); // ignore canAssign
+		}
+		
+		boolean draw() {
+		  return (unit[0] == unit[1]);
+		}
+		
+		boolean firstPlayerWins() {
+		  return (unit[0] > unit[1]);
 		}
 	}
 
