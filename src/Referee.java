@@ -31,9 +31,9 @@ public class Referee<State extends GameState> {
 //		referee.gs.init();
 //		referee.ui = new UnleashTheGeek.utgUI(referee.gs);
 		
-		Referee<CSB> referee = new Referee<CSB>(new CSB(),true);	
+		Referee<utg17State> referee = new Referee<utg17State>(new utg17State(),false);	
 		referee.gs.init();
-		referee.ui = new CSB.ui(referee,"Coders strike back");
+		referee.ui = new utg17State.ui(referee,"Unleash the geek 2017");
 		referee.start();
 		long prev=System.currentTimeMillis();
 		try { //play next turn on main thread (because of crappy pipe class)
@@ -79,6 +79,7 @@ public class Referee<State extends GameState> {
 		try{
 			os1.write(gs.getInitStr(0).getBytes());
 			os1.flush();
+			System.err.println("flushed "+gs.getInitStr(0));
 			os2.write(gs.getInitStr(1).getBytes());
 			os2.flush();
 		}
