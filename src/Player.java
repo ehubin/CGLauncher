@@ -180,13 +180,10 @@ class Player {
 			return planets[p].unit[player] > 4;
 		}
 		
-		Action[] getActions(int player)
-		{
-			return new Action[0];
-		}
+		
 		Action getRandomAction(int player) {
-			Action[] a=getActions(player);
-			return a[rnd.nextInt(a.length)];
+			
+			return new Action();
 		}
 	}
 
@@ -224,7 +221,9 @@ class Player {
 	static class Action {
 		int spreadPlanet = -1;
 		int[] target = new int[5];
-
+		int score=0;
+		
+		Action() {};
 		Action(Scanner s) {
 			for (int i = 0; i < target.length; ++i)
 				target[i] = s.nextInt();
@@ -252,29 +251,31 @@ class Player {
 		}
 		Action run(long time) {
 			long start = System.nanoTime();
-			Action[] possible=init.getActions(0);
-			int[] score=new int[possible.length];
+			HashSet<Action> possible=new HashSet<>();
 			do {
 				State a=(State)(init.clone());
-				int chosen = rnd.nextInt(possible.length);
-				Action a0 = possible[chosen];
-				Action a1= a.getRandomAction(1);
-				a.apply(a0, a1);
-				while(a.turn < a.nbP*2) {
-					a0=a.getRandomAction(0);
-					a1= a.getRandomAction(1);
-					a.apply(a0,a1);
-				}
-				score[chosen] += (a.whoWins()==0?1 :(a.whoWins()==1?-1:0));
+				Action a0=null,a1,chosen=null;
+				  do{
+					  if(a0==null) {
+						  a0=a.getRandomAction(0);
+						  chosen=a0;
+					  } else {
+						  a0=a.getRandomAction(0);
+					  }
+					  a1= a.getRandomAction(1);
+					  a.apply(a0,a1);
+				  } while(a.turn < a.nbP*2);
+				chosen.score += (a.whoWins()==0?1 :(a.whoWins()==1?-1:0));
 			} while (System.nanoTime()-start < time);
-			int best=-1, max=Integer.MIN_VALUE;
-			for(int i=0;i<possible.length;++i) {
-				if(score[i] >max) {
-					best=i;
-					max=score[i];
+			int  max=Integer.MIN_VALUE;
+			Action best=null;
+			for(Action a:possible) {
+				if(a.score >max) {
+					best=a;
+					max=a.score;
 				}
 			}
-			return possible[best];
+			return best;
 		}
 	}
 
