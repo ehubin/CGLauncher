@@ -61,8 +61,7 @@ public class utg17State implements GameState {
 
 	@Override
 	public int resolveActions() {
-		s.apply(actions[s.turn] );
-		s.apply(actions[s.turn]);
+		s.apply(actions[s.turn],actions[s.turn+1]);
 		return 0;
 	}
 
