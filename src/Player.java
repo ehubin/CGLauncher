@@ -68,7 +68,7 @@ class Player {
     
     static class Planet {
     	int[] unit= new int[2];
-		int[] tolerance=new int[2];
+		int[] tolerance=new int[] {5,5};
 		Planet[] adj;
     	Planet() {
     	}
