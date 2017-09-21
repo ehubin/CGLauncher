@@ -11,12 +11,11 @@ class Player {
     public static void main(String args[]) {
         Scanner in = new Scanner(System.in);
         State st=new State();
-        int planetCount = in.nextInt();
         st.readEdges(in);
 
         // game loop
         while (true) {
-            for (int i = 0; i < planetCount; i++) {
+            for (int i = 0; i < st.nbP; i++) {
                 st.planets[i].update(in);
             }
 
