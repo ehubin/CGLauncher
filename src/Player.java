@@ -217,10 +217,11 @@ class Player {
 		{
 			int other = player^1;
 			Set<Planet> res = new HashSet<Planet>();
-			for (int i = 0; i < nbP; i++) {				
+			for (int i = 0; i < nbP; i++) {
+				if (planets[i].unit[player] <= 0)
+					continue;
 				if (planets[i].tolerance[player] > 0) {
 					//select planets with enemies nearby
-				  
 					for (int j = 0; j < planets[i].adj.length; j++) {
 						if (planets[i].adj[j].unit[other] > 0) {
 							res.add(planets[i]);
