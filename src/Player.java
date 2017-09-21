@@ -232,9 +232,12 @@ class Player {
 			}
 
 			Random rnd = new Random();
-			int choice = rnd.nextInt(candidate.size());
+			// 50% chance do a spread
 			if (rnd.nextInt(1) > 0) {
-				return choice;
+				// select randomly one candidate
+				int choice = rnd.nextInt(candidate.size());
+				Planet[] array = candidate.toArray(new Planet[candidate.size()]);
+				return array[choice].idx;
 			}
 			
 			return -1;
