@@ -84,7 +84,12 @@ class Player {
     static class Action {
     	int spreadPlanet=-1;
     	int[] target=new int[5];
-    	
+    	Action(Scanner s) {
+    		for(int i=0;i<target.length;++i) target[i]=s.nextInt();
+    		String spread=s.next();
+    		if(spread.equals("NONE")) spreadPlanet=-1;
+    		else spreadPlanet=Integer.parseInt(spread);
+    	}
     	public String toString() {
     		StringBuilder sb= new StringBuilder();
     		for(int i:target) sb.append(i+"\n");
