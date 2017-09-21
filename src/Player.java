@@ -18,22 +18,19 @@ class Player {
             for (int i = 0; i < st.nbP; i++) {
                 st.planets[i].update(in);
             }
-
+            Action a=null;
             // Write an action using System.out.println()
             // To debug: System.err.println("Debug messages...");
 
-            System.out.println("0");
-            System.out.println("0");
-            System.out.println("0");
-            System.out.println("0");
-            System.out.println("0");
-            System.out.println("0");
+            System.out.println(a);
+            
         }
     }
     
     static class State {
     	Planet[] planets;
     	int nbP,nbE;
+    	int turn = 0;
     	int [][] edges;
     	void readEdges(Scanner in) {
     		nbP=in.nextInt();
@@ -46,6 +43,11 @@ class Player {
     			edges[i][1]=in.nextInt();
     		}
     	}
+    	State apply(Action a) {
+    		return null;
+    	}
+    	int[] getValidPlanets() {return null;}
+    	boolean canSpreadFrom(int p,int player) {return planets[p].unit[player]>4;}
     }
     
     static class Planet {
@@ -59,6 +61,18 @@ class Player {
     		unit[1]=in.nextInt();
     		tolerance[1]=in.nextInt();
     		in.nextInt(); //ignore canAssign
+    	}
+    }
+    
+    static class Action {
+    	int spreadPlanet=-1;
+    	int[] target=new int[5];
+    	
+    	public String toString() {
+    		StringBuilder sb= new StringBuilder();
+    		for(int i:target) sb.append(i+"\n");
+    		sb.append((spreadPlanet == -1 ?"NONE":spreadPlanet)+"\n");
+    		return sb.toString();
     	}
     }
 }
