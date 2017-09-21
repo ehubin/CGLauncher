@@ -73,8 +73,10 @@ class Player {
 			}
 			Planet[] empty = new Planet[0];
 			int i = 0;
-			for (ArrayList<Planet> a : links)
+			for (ArrayList<Planet> a : links) 
 				planets[i++].adj = a.toArray(empty);
+				
+			for(Planet p:planets) System.err.println(p);
 		}
 
 		/**
@@ -258,6 +260,10 @@ class Player {
 		
 		boolean firstPlayerWins() {
 		  return (unit[0] > unit[1]);
+		}
+		
+		public String toString() {
+		    return idx+":\n"+unit[0]+" "+tolerance[0]+"\n"+unit[1]+" "+tolerance[1]+"\n"+adj;
 		}
 	}
 
