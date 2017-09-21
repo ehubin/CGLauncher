@@ -11,16 +11,25 @@ class Player {
 	public static void main(String args[]) {
 		Scanner in = new Scanner(System.in);
 		State st = new State();
+		
 		st.readEdges(in);
+		//System.err.println("End of ReadEdges");
+		
+    //System.err.println("Nf of planets " + st.nbP);
 
 		// game loop
 		while (true) {
 			for (int i = 0; i < st.nbP; i++) {
 				st.planets[i].update(in);
 			}
+	    //System.err.println("After while");
+
 			MonteCarlo mc = new MonteCarlo(st);
-			Action best = mc.run(49000000); //49 msec run in nanosecs
-			System.out.println(best);
+			//System.err.println("After MC");
+
+			Action best = mc.run(20000000); //49 msec run in nanosecs
+			//System.err.println("After MC RUN");
+			System.out.println(best.toCommand());
 
 		}
 	}
@@ -76,7 +85,7 @@ class Player {
 			for (ArrayList<Planet> a : links) 
 				planets[i++].adj = a.toArray(empty);
 				
-			for(Planet p:planets) System.err.println(p);
+			//for(Planet p:planets) //System.err.println(p);
 		}
 
 		/**
@@ -187,9 +196,11 @@ class Player {
 			Action res = new Action();
 			Set<Planet> interesting = getInterestingPlanets(player);
 			List<Planet> list=new ArrayList<>(interesting);
+			////System.err.println("Interesting planets:");
+	    //for(Planet p:interesting) //System.err.println(p);
 			int [] chosenCount= new int[nbP];
 			for(int i=0;i<res.target.length;++i) {
-				if(list.size()==0) res.target[i]= 0; 
+				if(list.size()==0) res.target[i]= -1; 
 				else {
 					Planet p=list.get(rnd.nextInt(list.size()));
 					res.target[i]= p.idx;
@@ -209,6 +220,7 @@ class Player {
 			for (int i = 0; i < nbP; i++) {				
 				if (planets[i].tolerance[player] > 0) {
 					//select planets with enemies nearby
+				  
 					for (int j = 0; j < planets[i].adj.length; j++) {
 						if (planets[i].adj[j].unit[other] > 0) {
 							res.add(planets[i]);
@@ -244,6 +256,7 @@ class Player {
 			unit[1]=p.unit[1];
 			tolerance[0]=p.tolerance[0];
 			tolerance[1]=p.tolerance[1];
+			adj = p.adj;
 		}
 
 		void update(Scanner in) {
@@ -263,7 +276,7 @@ class Player {
 		}
 		
 		public String toString() {
-		    return idx+":\n"+unit[0]+" "+tolerance[0]+"\n"+unit[1]+" "+tolerance[1]+"\n"+adj;
+		    return idx+": "+unit[0]+" "+tolerance[0]+" "+unit[1]+" "+tolerance[1]+" "+adj;
 		}
 	}
 
@@ -271,6 +284,7 @@ class Player {
 		int spreadPlanet = -1;
 		int[] target = new int[5];
 		int score=0;
+		boolean sorted = false;
 		
 		Action() {};
 		Action(Scanner s) {
@@ -287,9 +301,52 @@ class Player {
 			StringBuilder sb = new StringBuilder();
 			for (int i : target)
 				sb.append(i + "\n");
-			sb.append((spreadPlanet == -1 ? "NONE" : spreadPlanet) + "\n");
+			sb.append((spreadPlanet == -1 ? "NONE" : spreadPlanet) + "\n" + "Score: "+score);
 			return sb.toString();
 		}
+		
+    public String toCommand() {
+      StringBuilder sb = new StringBuilder();
+      for (int i : target)
+        sb.append(i + "\n");
+      sb.append((spreadPlanet == -1 ? "NONE" : spreadPlanet));
+      return sb.toString();
+    }
+    @Override
+    public int hashCode() {
+      final int prime = 31;
+      int result = 1;
+      result = prime * result + score;
+      result = prime * result + spreadPlanet;
+      result = prime * result + Arrays.hashCode(target);
+      return result;
+    }
+    
+    public boolean equals(Object o)
+    {
+      Action a = (Action) o;
+      if (a.spreadPlanet != spreadPlanet)
+      {
+        return false;
+      }
+      if (!sorted)
+      {
+        Arrays.sort(target);
+      }
+      if (!a.sorted)
+      {
+        Arrays.sort(a.target);
+      }
+      for (int i=0;i<target.length;++i)
+      {
+        if (a.target[i] != target[i]) return false;
+      }
+      return true;
+    }
+    
+    
+
+		
 	}
 	
 	static class MonteCarlo {
@@ -308,6 +365,7 @@ class Player {
 					  if(a0==null) {
 						  a0=a.getRandomAction(0);
 						  chosen=a0;
+						  possible.add(a0);
 					  } else {
 						  a0=a.getRandomAction(0);
 					  }
@@ -315,10 +373,12 @@ class Player {
 					  a.apply(a0,a1);
 				  } while(a.turn < a.nbP*2);
 				chosen.score += (a.whoWins()==0?1 :(a.whoWins()==1?-1:0));
+				////System.err.println("chosen score");
 			} while (System.nanoTime()-start < time);
 			int  max=Integer.MIN_VALUE;
 			Action best=null;
 			for(Action a:possible) {
+			  //System.err.println(a);
 				if(a.score >max) {
 					best=a;
 					max=a.score;
