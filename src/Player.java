@@ -45,8 +45,15 @@ class Player {
 				res.planets[i]= new Planet(planets[i]);
 			return res;
 		}
+		// returns -1 if undecided 0 or 1 if one of the two players wins
 		int whoWins() {
-			return -1;
+			if(turn < nbP/2) return -1;
+			int res=0;
+			for(Planet p:planets) {
+				if(p.unit[0]>p.unit[1]) res++;
+				if(p.unit[0]<p.unit[1]) res--;
+			}
+			return res>0? 0: (res<0? 1:-1);
 		}
 
 		void readEdges(Scanner in) {
