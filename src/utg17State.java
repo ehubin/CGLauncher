@@ -1,24 +1,31 @@
 import java.util.Scanner;
 
-
 public class utg17State implements GameState {
-
+	Player.State s;
 	@Override
 	public int getResult() {
 		// TODO Auto-generated method stub
-		return 0;
+		return UNDECIDED;
 	}
 
 	@Override
 	public void init() {
-		// TODO Auto-generated method stub
+		s=new Player.State();
 
 	}
 
 	@Override
 	public String getStateStr(int id) {
-		// TODO Auto-generated method stub
-		return null;
+		int other = id^1;
+		StringBuilder sb=new StringBuilder();
+		for(Player.Planet p:s.planets) {
+			sb.append(p.unit[id]);
+			sb.append(p.tolerance[id]);
+			sb.append(p.unit[other]);
+			sb.append(p.tolerance[other]);
+			sb.append(s.canAssign(p,id)?"1":"0");
+		}
+		return sb.toString();
 	}
 
 	@Override
