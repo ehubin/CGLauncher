@@ -56,7 +56,17 @@ class Player {
     	State apply(Action a) {
     		return null;
     	}
-    	int[] getValidPlanets(int player) {return null;}
+    	
+    	int[] getValidPlanets(int player) {
+    		int[] validPlanets = null;
+    		for(int i=0;i<nbP;++i) {
+    			if (canAssign(planets[i],player)) {
+    				validPlanets[i]=i;
+    			}
+    		}
+    		return validPlanets;
+    	}
+    	
     	boolean canSpreadFrom(int p,int player) {return planets[p].unit[player]>4;}
     	boolean canAssign(Planet p,int player) {
     		if(p.tolerance[player] <=0 ) return false;
