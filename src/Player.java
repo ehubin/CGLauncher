@@ -1,3 +1,5 @@
+import java.io.InputStream;
+import java.io.PrintStream;
 import java.util.*;
 
 
@@ -6,15 +8,16 @@ import java.util.*;
  * according to the problem statement.
  **/
 class Player {
-
+	// input/output magic for local invocation 	
+ 	static InputStream in=System.in;
+ 	static PrintStream out=System.out;
+ 	
 	public static void main(String args[]) {
 		Scanner in = new Scanner(System.in);
 		State st = new State();
 		
 		st.readEdges(in);
-		//System.err.println("End of ReadEdges");
-		
-    //System.err.println("Nf of planets " + st.nbP);
+    System.err.println("Nb of planets " + st.nbP);
 
 		// game loop
 		while (true) {
