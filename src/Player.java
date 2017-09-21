@@ -355,6 +355,7 @@ class Player {
 		MonteCarlo(State s) {
 			init=s;
 		}
+		int nbtentative = 0;
 		Action run(long time) {
 			long start = System.nanoTime();
 			HashSet<Action> possible=new HashSet<>();
@@ -365,7 +366,6 @@ class Player {
 					  if(a0==null) {
 						  a0=a.getRandomAction(0);
 						  chosen=a0;
-						  possible.add(a0);
 					  } else {
 						  a0=a.getRandomAction(0);
 					  }
@@ -373,15 +373,18 @@ class Player {
 					  a.apply(a0,a1);
 				  } while(a.turn < a.nbP*2);
 				chosen.score += (a.whoWins()==0?1 :(a.whoWins()==1?-1:0));
+				possible.add(chosen);
+				nbtentative++;
 				////System.err.println("chosen score");
 			} while (System.nanoTime()-start < time);
+			System.err.println("Nb Tentatives: " + nbtentative);
 			int  max=Integer.MIN_VALUE;
 			Action best=null;
-			for(Action a:possible) {
+			for(Action p:possible) {
 			  //System.err.println(a);
-				if(a.score >max) {
-					best=a;
-					max=a.score;
+				if(p.score >max) {
+					best=p;
+					max=p.score;
 				}
 			}
 			return best;
