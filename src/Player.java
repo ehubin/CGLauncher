@@ -64,6 +64,10 @@ class Player {
     		for(Planet pl:p.adj) if(pl.unit[player] >0) return true;
     		return false;
     	}
+    	// return -1 for undecided o or 1 if player 0 or 1 wins
+    	int whoWins() {
+    		return -1;
+    	}
     }
     
     static class Planet {

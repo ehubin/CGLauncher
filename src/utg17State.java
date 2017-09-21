@@ -13,7 +13,7 @@ public class utg17State implements GameState {
 	@Override
 	public int getResult() {
 		// TODO Auto-generated method stub
-		return (turn/2!=s.nbP) UNDECIDED;
+		return s.whoWins();
 	}
 
 	@Override
