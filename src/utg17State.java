@@ -1,18 +1,32 @@
+import java.util.Random;
 import java.util.Scanner;
 
 public class utg17State implements GameState {
+	private static final long serialVersionUID = 1L;
+
+	static class Edge {
+		int p1;int p2;
+	}
+	public static Random rnd=new Random();
 	Player.State s;
 	Player.Action[] actions;
 	@Override
 	public int getResult() {
 		// TODO Auto-generated method stub
-		return UNDECIDED;
+		return (turn/2!=s.nbP) UNDECIDED;
 	}
 
 	@Override
 	public void init() {
 		s=new Player.State();
-
+		s.nbP=50+rnd.nextInt(101);
+		s.nbE=(int)((3+rnd.nextDouble())*s.nbP);
+		int player0=rnd.nextInt(s.nbP);
+		int player1;
+		do { player1=rnd.nextInt(s.nbP);} while(player1==player0);
+		s.planets[player0].unit[0]=5;
+		s.planets[player1].unit[1]=5;
+		
 	}
 
 	@Override
@@ -54,8 +68,8 @@ public class utg17State implements GameState {
 
 	@Override
 	public void startTurn() {
-		// TODO Auto-generated method stub
-
+		
+		
 	}
 
 	@Override
