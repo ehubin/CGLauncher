@@ -1,6 +1,5 @@
 import java.util.*;
-import java.io.*;
-import java.math.*;
+
 
 /**
  * Auto-generated code below aims at helping you parse
@@ -74,9 +73,17 @@ class Player {
     		for(Planet pl:p.adj) if(pl.unit[player] >0) return true;
     		return false;
     	}
-    	// return -1 for undecided o or 1 if player 0 or 1 wins
+    	// return -1 for undecided 0 or 1 if player 0 or 1 wins
     	int whoWins() {
-    		return -1;
+    		if((turn/2) != nbP) return -1;
+    		else {
+    			int res=0;
+    			for(Planet p:planets) {
+    				if(p.unit[0]>p.unit[1]) res+=1;
+    				else if(p.unit[1]>p.unit[0]) res-=1;
+    			}
+    			return res>0 ? 0:(res<0?1:-1);
+    		}
     	}
     }
     
