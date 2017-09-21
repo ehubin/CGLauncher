@@ -118,6 +118,9 @@ public class utg17State implements GameState {
 
 	@Override
 	public int resolveActions() {
+		System.err.println("turn:"+s.turn);
+		System.err.println("actions.length:"+actions.length);
+		System.err.println("actions[s.turn]:"+actions[s.turn]);
 		s.apply(actions[s.turn],actions[s.turn+1]);
 		return 0;
 	}

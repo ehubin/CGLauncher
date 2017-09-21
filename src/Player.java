@@ -321,8 +321,12 @@ class Player {
 		
 		Action() {};
 		Action(Scanner s) {
+			System.err.println("target.length = "+target.length);
 			for (int i = 0; i < target.length; ++i)
+			{
 				target[i] = s.nextInt();
+				System.err.println("target["+i+"] = "+target[i]);
+			}
 			String spread = s.next();
 			if (spread.equals("NONE"))
 				spreadPlanet = -1;
