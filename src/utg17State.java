@@ -2,8 +2,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.FontMetrics;
+
 import java.awt.Graphics2D;
 import java.awt.Shape;
 import java.awt.event.ActionEvent;
@@ -19,6 +18,10 @@ import javax.swing.JButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
+import org.graphstream.graph.Graph;
+import org.graphstream.graph.implementations.MultiGraph;
+import org.graphstream.ui.view.View;
+import org.graphstream.ui.view.Viewer;
 
 
 public class utg17State implements GameState {
@@ -82,7 +85,7 @@ public class utg17State implements GameState {
 		}
 		Player.Planet[] empty = new Player.Planet[0];
 		for(int j=0;j<s.nbP;++j) s.planets[j].adj=adj.get(j).toArray(empty);
-		actions = new Player.Action[s.nbP*2];
+		actions = new Player.Action[2];
 	}
 
 	@Override
@@ -112,13 +115,13 @@ public class utg17State implements GameState {
 
 	@Override
 	public void readActions(Scanner in, int id) {
-		actions[s.turn+id]= new Player.Action(in);
-		System.err.println("read =>"+actions[s.turn+id]);
+		actions[id]= new Player.Action(in);
+		System.err.println("read =>"+actions[id]);
 	}
 
 	@Override
 	public int resolveActions() {
-		s.apply(actions[s.turn],actions[s.turn+1]);
+		s.apply(actions[0],actions[1]);
 		return 0;
 	}
 
@@ -156,6 +159,16 @@ public class utg17State implements GameState {
 			sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			sp.setPreferredSize(new Dimension(console.getPreferredSize().width+20,450));
 			c.add(sp, BorderLayout.EAST);
+			Graph graph = new MultiGraph("embedded");
+			graph.addNode("toto");
+			graph.addNode("totu");
+			graph.addNode("tata");
+			graph.addEdge("", "toto", "tata");
+			Viewer viewer = new Viewer(graph, Viewer.ThreadingModel.GRAPH_IN_ANOTHER_THREAD);
+			// ...
+			View view = viewer.addDefaultView(false);   // false indicates "no JFrame".
+			// ...
+			c.add(viewer.getDefaultView(),BorderLayout.CENTER);
 			if(referee != null) {
 				buttonPanel.add(new JButton(new AbstractAction("Reset") {
 
