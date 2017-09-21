@@ -236,6 +236,7 @@ class Player {
 			if (rnd.nextInt(1) > 0) {
 				return choice;
 			}
+			
 			return -1;
 		}
 		
