@@ -60,7 +60,7 @@ class Player {
 			planets = new Planet[nbP];
 			ArrayList<ArrayList<Planet>> links = new ArrayList<ArrayList<Planet>>();
 			for (int i = 0; i < nbP; ++i) {
-				planets[i] = new Planet();
+				planets[i] = new Planet(i);
 				links.add(new ArrayList<Planet>());
 			}
 			nbE = in.nextInt();
@@ -182,17 +182,60 @@ class Player {
 		
 		
 		Action getRandomAction(int player) {
-			
-			return new Action();
+			Action res = new Action();
+			Set<Planet> interesting = getInterestingPlanets(player);
+			List<Planet> list=new ArrayList<>(interesting);
+			int [] chosenCount= new int[nbP];
+			for(int i=0;i<res.target.length;++i) {
+				if(list.size()==0) res.target[i]= 0; 
+				else {
+					Planet p=list.get(rnd.nextInt(list.size()));
+					res.target[i]= p.idx;
+					chosenCount[p.idx]++;
+					if(chosenCount[p.idx]>=p.tolerance[player]) list.remove(p); 
+				}
+			}
+			return res;
+		}
+		
+		// possible planets are those where player have at least 1 unit and the adj
+		// and where tolerance is > 0
+		Set<Planet> getInterestingPlanets(int player)
+		{
+			int other = player^1;
+			Set<Planet> res = new HashSet<Planet>();
+			for (int i = 0; i < nbP; i++) {				
+				if (planets[i].tolerance[player] > 0) {
+					//select planets with enemies nearby
+					for (int j = 0; j < planets[i].adj.length; j++) {
+						if (planets[i].adj[j].unit[other] > 0) {
+							res.add(planets[i]);
+							break;
+						}
+					}
+				}
+				// select empty planets
+				for (int j = 0; j < planets[i].adj.length; j++) {
+					Planet p = planets[i].adj[j];
+					if (p.tolerance[player] > 0 && p.unit[player] == 0) {
+						res.add(p);
+					}
+				}
+			}
+			return res;
 		}
 	}
 
 	static class Planet {
 		int[] unit = new int[2];
 		int[] tolerance = new int[] { 5, 5 };
+		int idx;
 		Planet[] adj;
-
-		Planet() {
+		public boolean equals(Object o) {
+			return ((Planet)o).idx == idx;
+		}
+		Planet(int i) {
+			idx=i;
 		}
 		Planet(Planet p) {
 			unit[0]=p.unit[0];
