@@ -33,6 +33,9 @@ class Player {
     int turn = 0;
     int[][] edges;
 
+    int whoWins() {
+     return -1;
+    }
     void readEdges(Scanner in) {
 
       nbP = in.nextInt();
@@ -78,7 +81,8 @@ class Player {
       }
 
       for (int i : a.target) {
-        if (canAssign(planets[i], player)) incrementUnitForPlanet(planets[i], player);
+        if (canAssign(planets[i], player))
+          incrementUnitForPlanet(planets[i], player);
       }
       return this;
     }
@@ -89,18 +93,22 @@ class Player {
         planet.unit[player]++;
       }
     }
-    public static int[] intersection(int[] a, int[] b) {
-      return Arrays.stream(a).filter(x -> Arrays.stream(b).anyMatch(y -> y == x)).toArray();
-    }
 
-    int[] getValidPlanets(int player) {
-      int[] validPlanets = null;
-      for(int i=0;i<nbP;++i) {
-        if (canAssign(planets[i],player)) {
-          validPlanets[i]=i;
-        }
+    static class Planet {
+      int[] unit = new int[2];
+      int[] tolerance = new int[] { 5, 5 };
+      Planet[] adj;
+
+      Planet() {
       }
-      return validPlanets;
+
+      void update(Scanner in) {
+        unit[0] = in.nextInt();
+        tolerance[0] = in.nextInt();
+        unit[1] = in.nextInt();
+        tolerance[1] = in.nextInt();
+        in.nextInt(); // ignore canAssign
+      }
     }
 
     boolean canSpreadFrom(int p, int player) {
@@ -116,23 +124,6 @@ class Player {
         if (pl.unit[player] > 0)
           return true;
       return false;
-    }
-  }
-
-  static class Planet {
-    int[] unit = new int[2];
-    int[] tolerance = new int[2];
-    Planet[] adj;
-
-    Planet() {
-    }
-
-    void update(Scanner in) {
-      unit[0] = in.nextInt();
-      tolerance[0] = in.nextInt();
-      unit[1] = in.nextInt();
-      tolerance[1] = in.nextInt();
-      in.nextInt(); // ignore canAssign
     }
   }
 

@@ -13,8 +13,8 @@ import java.util.concurrent.BlockingQueue;
 
 public class Referee<State extends GameState> {
 	// WARNING: can't run the same class twice when in the same jvm
-	static String player1Class="CSBDummyPlayer";
-	static String player2Class="CSBPlayer";
+	static String player1Class="Player";
+	static String player2Class="Player";
 	BlockingQueue<Boolean> q= new ArrayBlockingQueue<Boolean>(2,true);
 	Thread pl1,pl2;
 	Wrapper p1,p2;
