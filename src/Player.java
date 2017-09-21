@@ -207,7 +207,33 @@ class Player {
 					if(chosenCount[p.idx]>=p.tolerance[player]) list.remove(p); 
 				}
 			}
+			res.spreadPlanet = addOptionalSpread(res, player);
 			return res;
+		}
+
+		// add spread if interesting
+		// if 1 planet has more than 5 units more than the other player
+		// and on some neighbours the other player has more units or only a few less
+		int addOptionalSpread(Action a, int player) {
+			int other = player ^ 1;
+			Set<Planet> candidate = new HashSet<Planet>();
+			for (int i = 0; i < nbP; i++) {
+				if (planets[i].unit[player] > 5) {
+					if (planets[i].unit[player] - planets[i].unit[other] < 5) {
+						candidate.add(planets[i]);
+					}
+				}
+			}
+			if (candidate.isEmpty()) {
+				return -1;
+			}
+
+			Random rnd = new Random();
+			int choice = rnd.nextInt(candidate.size());
+			if (rnd.nextInt(1) > 0) {
+				return choice;
+			}
+			return -1;
 		}
 		
 		// possible planets are those where player have at least 1 unit and the adj
@@ -355,6 +381,8 @@ class Player {
 		MonteCarlo(State s) {
 			init=s;
 		}
+		
+		public 
 		int nbtentative = 0;
 		Action run(long time) {
 			long start = System.nanoTime();
