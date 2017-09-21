@@ -77,10 +77,9 @@ class Player {
         }
       }
 
-      for (int i : intersection(a.target, getValidPlanets(player))) {
-        incrementUnitForPlanet(planets[i], player);
+      for (int i : a.target) {
+        if (canAssign(planets[i], player)) incrementUnitForPlanet(planets[i], player);
       }
-
       return this;
     }
 
@@ -95,7 +94,13 @@ class Player {
     }
 
     int[] getValidPlanets(int player) {
-      return null;
+      int[] validPlanets = null;
+      for(int i=0;i<nbP;++i) {
+        if (canAssign(planets[i],player)) {
+          validPlanets[i]=i;
+        }
+      }
+      return validPlanets;
     }
 
     boolean canSpreadFrom(int p, int player) {
