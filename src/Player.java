@@ -57,11 +57,11 @@ class Player {
     		return null;
     	}
     	
-    	Planet[] getValidPlanets(int player) {
-    		Planet[] validPlanets = null;
+    	int[] getValidPlanets(int player) {
+    		int[] validPlanets = null;
     		for(int i=0;i<nbP;++i) {
     			if (canAssign(planets[i],player)) {
-    				validPlanets[i]=planets[i];
+    				validPlanets[i]=i;
     			}
     		}
     		return validPlanets;
