@@ -114,7 +114,7 @@ class Player {
 			}
 
 			for (int i : a.target) {
-				if (canAssign(planets[i], player))
+				if (i>=0 && canAssign(planets[i], player))
 					incrementUnitForPlanet(planets[i], player);
 			}
 		}
