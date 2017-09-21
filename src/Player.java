@@ -18,11 +18,9 @@ class Player {
 			for (int i = 0; i < st.nbP; i++) {
 				st.planets[i].update(in);
 			}
-			Action a = null;
-			// Write an action using System.out.println()
-			// To debug: System.err.println("Debug messages...");
-
-			System.out.println(a);
+			MonteCarlo mc = new MonteCarlo(st);
+			Action best = mc.run(49000000); //49 msec run in nanosecs
+			System.out.println(best);
 
 		}
 	}
