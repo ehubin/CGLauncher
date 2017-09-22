@@ -1,11 +1,9 @@
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
 
 import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Random;
@@ -36,12 +34,11 @@ public class utg17State implements GameState {
 		@Override
 		public int hashCode() { return p1 | p2<<16;}
 	}
-	public static Random rnd=new Random();
-	Player.State s;
-	Player.Action[] actions;
+	private static Random rnd=new Random();
+	private Player.State s;
+	private Player.Action[] actions;
 	@Override
 	public int getResult() {
-		// TODO Auto-generated method stub
 		return s.whoWins();
 	}
 
@@ -53,15 +50,15 @@ public class utg17State implements GameState {
 		int InitPlanetPlayer1;
 		do { InitPlanetPlayer1=rnd.nextInt(s.nbP);} while(InitPlanetPlayer1==InitPlanetPlayer0);
 		s.planets=new Player.Planet[s.nbP];
-		for(int i=0;i<s.nbP;++i) s.planets[i]=new Player.Planet(i); 
+		for(int i=0;i<s.nbP;++i) s.planets[i]=new Player.Planet(i);
 		s.planets[InitPlanetPlayer0].unit[0]=5;
 		s.planets[InitPlanetPlayer1].unit[1]=5;
 		s.planets[InitPlanetPlayer0].tolerance[0]=4;
 		s.planets[InitPlanetPlayer1].tolerance[1]=4;
 		int nbE=0,nbEmpty=s.nbP,floorE =(int)(s.nbP*2.5);
 		HashSet<Edge> ed=new HashSet<>();
-		ArrayList<ArrayList<Player.Planet>> adj = new ArrayList<ArrayList<Player.Planet>>(s.nbP);
-		for(int j=0;j<s.nbP;++j) adj.add(new ArrayList<Player.Planet>());
+		ArrayList<ArrayList<Player.Planet>> adj = new ArrayList<>(s.nbP);
+		for(int j=0;j<s.nbP;++j) adj.add(new ArrayList<>());
 		do {
 			Edge e=new Edge();
 			e.p1=rnd.nextInt(s.nbP);
@@ -73,11 +70,11 @@ public class utg17State implements GameState {
 			if(adj.get(e.p1).size()==1) --nbEmpty;
 			if(adj.get(e.p2).size()==1) --nbEmpty;
 		} while(++nbE < floorE || nbEmpty>0 );
-		
+
 		int i=0;
 		s.nbE = ed.size();
 		s.edges = new int[ed.size()][2];
-		
+
 		for(Edge e:ed) {
 			s.edges[i][0] = e.p1;
 			s.edges[i++][1] = e.p2;
@@ -92,10 +89,10 @@ public class utg17State implements GameState {
 		int other = id^1;
 		StringBuilder sb=new StringBuilder();
 		for(Player.Planet p:s.planets) {
-			sb.append(p.unit[id]+"\n");
-			sb.append(p.tolerance[id]+"\n");
-			sb.append(p.unit[other]+"\n");
-			sb.append(p.tolerance[other]+"\n");
+			sb.append(p.unit[id]).append("\n");
+			sb.append(p.tolerance[id]).append("\n");
+			sb.append(p.unit[other]).append("\n");
+			sb.append(p.tolerance[other]).append("\n");
 			sb.append(s.canAssign(p,id)?"1\n":"0\n");
 		}
 		return sb.toString();
@@ -104,10 +101,10 @@ public class utg17State implements GameState {
 	@Override
 	public String getInitStr(int id) {
 		StringBuilder sb= new StringBuilder();
-		sb.append(s.nbP+"\n");
-		sb.append(s.nbE+"\n");
+		sb.append(s.nbP).append("\n");
+		sb.append(s.nbE).append("\n");
 		for(int i=0;i<s.edges.length;++i) {
-			sb.append(s.edges[i][0]+" "+s.edges[i][1]+"\n");
+			sb.append(s.edges[i][0]).append(" ").append(s.edges[i][1]).append("\n");
 		}
 		return sb.toString();
 	}
@@ -128,27 +125,26 @@ public class utg17State implements GameState {
 
 	@Override
 	public void startTurn() {
-		
-		
+
+
 	}
 
 	@Override
 	public GameState save() {
 		return null;
 	}
-	
+
 	@SuppressWarnings("serial")
 	public static class ui extends GameUI<utg17State> {
-		BufferedImage ship;
 		JTextArea console;
 		Graph g=new MultiGraph("embedded");
 		Container c;
-		
-		ui(Referee<utg17State> s, String title) { 
+
+		ui(Referee<utg17State> s, String title) {
 			super(s,title);
 			//ship=loadSprite("ship.png");
 		}
-		ui(utg17State s, String title) { 
+		ui(utg17State s, String title) {
 			super(s,title);
 			//ship=loadSprite("ship.png");
 		}
@@ -162,10 +158,10 @@ public class utg17State implements GameState {
 			sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			sp.setPreferredSize(new Dimension(console.getPreferredSize().width+20,450));
 			c.add(sp, BorderLayout.EAST);
-			
-			
-			
-			
+
+
+
+
 			if(referee != null) {
 				buttonPanel.add(new JButton(new AbstractAction("Reset") {
 
@@ -181,35 +177,31 @@ public class utg17State implements GameState {
 				}));
 			}
 		}
-		
+
 		void initGraph() {
 			if(currentState.s==null||g.getEdgeCount() == currentState.s.nbE) return;
-			
+
 			Node n;
 			for(Player.Planet p:currentState.s.planets) {
 				n=g.addNode(p.idx+"");
 				n.addAttribute("ui.label", p.idx+"");
 			}
 			int[][] l = currentState.s.edges;
-			for(int i=0;i<l.length;++i) {
-				org.graphstream.graph.Edge e=g.addEdge(l[i][0]+"_"+l[i][1], l[i][0]+"", l[i][1]+"");
+			for(int[] i:l) {
+				org.graphstream.graph.Edge e=g.addEdge(i[0]+"_"+i[1], i[0]+"", i[1]+"");
 				System.err.println("Added "+e);
 			}
 			Viewer viewer = new Viewer(g, Viewer.ThreadingModel.GRAPH_IN_GUI_THREAD);
 			viewer.enableAutoLayout();
 			ViewPanel view = viewer.addDefaultView(false);   // false indicates "no JFrame".
 			view.setPreferredSize(new Dimension (600,600));
-			
+
 			c.add(view,BorderLayout.WEST);
 			System.err.println("graph init done");
 		}
 		@Override
 		void draw(Graphics2D g) {
 			initGraph();
-			Color[] pcolors= {Color.BLACK,Color.RED};
-			Player.State s =currentState.s;
-			
-		
 
 		}
 	}
