@@ -25,7 +25,11 @@ class Player {
 				st.planets[i].update(in);
 			}
 	    //System.err.println("After while");
-
+			Set<Planet> validPlanets = st.getValidPlanets(0);
+			ArrayList<Planet> listPlanets = new ArrayList<Planet>(validPlanets);
+			Collections.sort(listPlanets, (Planet p1,Planet p2)->{return p1.getScore(0)-p2.getScore(0);});
+			System.err.println(listPlanets);
+			
 			MonteCarlo mc = new MonteCarlo(st);
 			//System.err.println("After MC");
 
@@ -54,6 +58,9 @@ class Player {
 				res.planets[i]= new Planet(planets[i]);
 			return res;
 		}
+		
+	
+		
 		// returns -1 if undecided 0 or 1 if one of the two players wins
 		int whoWins() {
 			if(turn < nbP/2) return -1;
@@ -197,12 +204,30 @@ class Player {
 		
 		Action getRandomAction(int player) {
 			Action res = new Action();
+						
+			Set<Planet> topInteresting = getTopInterestingPlanets(player);
+			List<Planet> topList=new ArrayList<>(topInteresting);
+			int [] topChosenCount= new int[nbP];
+			for(int i=0;i<res.target.length;++i) {
+				if(topList.size()==0) res.target[i]= -1; 
+				else {
+					Planet p=topList.get(rnd.nextInt(topList.size()));
+					res.target[i]= p.idx;
+					topChosenCount[p.idx]++;
+					if(topChosenCount[p.idx]>=p.tolerance[player]) topList.remove(p); 
+				}
+			}		
+						
 			Set<Planet> interesting = getInterestingPlanets(player);
 			List<Planet> list=new ArrayList<>(interesting);
 			////System.err.println("Interesting planets:");
 	    //for(Planet p:interesting) //System.err.println(p);
 			int [] chosenCount= new int[nbP];
 			for(int i=0;i<res.target.length;++i) {
+				if (res.target[i] != -1)
+				{
+					continue;
+				}
 				if(list.size()==0) res.target[i]= -1; 
 				else {
 					Planet p=list.get(rnd.nextInt(list.size()));
@@ -214,9 +239,14 @@ class Player {
 			
 			// replace target -1 by remaining valid planets
 			Set<Planet> validPlanets = getValidPlanets(player);
+			
 			List<Planet> listValidPlanets = new ArrayList<>(validPlanets);
 			int [] chosenCountValid= new int[nbP];
 			for(int i=0;i<res.target.length;++i) {
+				if (res.target[i] != -1)
+				{
+					continue;
+				}
 				// in the worst case, set arbitrarily 0 instead of -1 as valid input
 				if(listValidPlanets.size()==0) res.target[i]= 0; 
 				else {
@@ -252,8 +282,8 @@ class Player {
 			Random rnd = new Random();
 			// 66% chance do a spread
 //			if (rnd.nextInt(3) > 0) {
-			// debug 100% isntead
-			if (true) {
+			// debug 100% instead
+			if (rnd.nextInt(3) > 0) {
 				// select randomly one candidate
 				int choice = rnd.nextInt(spreadCandidates.size());
 				Planet[] array = spreadCandidates.toArray(new Planet[spreadCandidates.size()]);
@@ -263,6 +293,24 @@ class Player {
 			return -1;
 		}
 		
+		Set<Planet> getTopInterestingPlanets(int player)
+		{
+			int other = player^1;
+			Set<Planet> res = new HashSet<Planet>();
+			for (int i = 0; i < nbP; i++) {
+				// forget planet without any unit
+				if (planets[i].unit[player] <= 0)
+					continue;
+				// select empty planets close to this planet
+				for (int j = 0; j < planets[i].adj.length; j++) {
+					Planet p = planets[i].adj[j];
+					if (p.tolerance[player] > 0 && ((p.unit[player] == 0) || (p.unit[player] <= p.unit[other]))) {
+						res.add(p);
+					}
+				}
+			}
+			return res;
+		}
 		// possible planets are those where player have at least 1 unit and the adj
 		// and where tolerance is > 0
 		Set<Planet> getInterestingPlanets(int player)
@@ -331,6 +379,24 @@ class Player {
 		}
 		Planet(int i) {
 			idx=i;
+		}
+		
+		int getScore( int player)
+		{
+			int other = player^1;
+			// if empty
+			if ( (unit[player] == 0) && (unit[other] == 0))
+			{
+				return 2;
+			}
+			if ( (unit[player] > 0) && (unit[other] == 0))
+			{
+				return -2;
+			}
+			else
+			{
+				return 1;
+			}
 		}
 		Planet(Planet p) {
 			unit[0]=p.unit[0];
