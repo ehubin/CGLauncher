@@ -194,6 +194,7 @@ class Player {
 		}
 		
 		
+		
 		Action getRandomAction(int player) {
 			Action res = new Action();
 			Set<Planet> interesting = getInterestingPlanets(player);
@@ -210,6 +211,23 @@ class Player {
 					if(chosenCount[p.idx]>=p.tolerance[player]) list.remove(p); 
 				}
 			}
+			
+			// replace target -1 by remaining valid planets
+			Set<Planet> validPlanets = getValidPlanets(player);
+			List<Planet> listValidPlanets = new ArrayList<>(validPlanets);
+			int [] chosenCountValid= new int[nbP];
+			for(int i=0;i<res.target.length;++i) {
+				// in the worst case, set arbitrarily 0 instead of -1 as valid input
+				if(listValidPlanets.size()==0) res.target[i]= 0; 
+				else {
+					Planet p=listValidPlanets.get(rnd.nextInt(listValidPlanets.size()));
+					res.target[i]= p.idx;
+					chosenCountValid[p.idx]++;
+					if(chosenCountValid[p.idx]>=p.tolerance[player]) listValidPlanets.remove(p); 
+				}
+			}
+				
+			// add interesting spread with 66% chance
 			res.spreadPlanet = addOptionalSpread(res, player);
 			return res;
 		}
@@ -219,24 +237,26 @@ class Player {
 		// and on some neighbours the other player has more units or only a few less
 		int addOptionalSpread(Action a, int player) {
 			int other = player ^ 1;
-			Set<Planet> candidate = new HashSet<Planet>();
+			Set<Planet> spreadCandidates = new HashSet<Planet>();
 			for (int i = 0; i < nbP; i++) {
 				if (planets[i].unit[player] > 5) {
 					if (planets[i].unit[player] - planets[i].unit[other] < 5) {
-						candidate.add(planets[i]);
+						spreadCandidates.add(planets[i]);
 					}
 				}
 			}
-			if (candidate.isEmpty()) {
+			if (spreadCandidates.isEmpty()) {
 				return -1;
 			}
 
 			Random rnd = new Random();
 			// 66% chance do a spread
-			if (rnd.nextInt(3) > 0) {
+//			if (rnd.nextInt(3) > 0) {
+			// debug 100% isntead
+			if (true) {
 				// select randomly one candidate
-				int choice = rnd.nextInt(candidate.size());
-				Planet[] array = candidate.toArray(new Planet[candidate.size()]);
+				int choice = rnd.nextInt(spreadCandidates.size());
+				Planet[] array = spreadCandidates.toArray(new Planet[spreadCandidates.size()]);
 				return array[choice].idx;
 			}
 			
@@ -250,10 +270,12 @@ class Player {
 			int other = player^1;
 			Set<Planet> res = new HashSet<Planet>();
 			for (int i = 0; i < nbP; i++) {
+				// forget planet without any unit
 				if (planets[i].unit[player] <= 0)
 					continue;
+				// planet can support 1 additional unit
 				if (planets[i].tolerance[player] > 0) {
-					//select planets with enemies nearby
+					// planet has enemies nearby
 					for (int j = 0; j < planets[i].adj.length; j++) {
 						if (planets[i].adj[j].unit[other] > 0) {
 							res.add(planets[i]);
@@ -261,10 +283,36 @@ class Player {
 						}
 					}
 				}
-				// select empty planets
+				// select empty planets close to this planet
 				for (int j = 0; j < planets[i].adj.length; j++) {
 					Planet p = planets[i].adj[j];
 					if (p.tolerance[player] > 0 && p.unit[player] == 0) {
+						res.add(p);
+					}
+				}
+			}
+			return res;
+		}
+		
+		// valid planets are :
+		// those with units with enough tolerance
+		// and their neighbourgs with enough tolerance
+		Set<Planet> getValidPlanets(int player)
+		{
+			int other = player^1;
+			Set<Planet> res = new HashSet<Planet>();
+			for (int i = 0; i < nbP; i++) {
+				// forget planet without unit
+				if (planets[i].unit[player] <= 0)
+					continue;
+				// add planet with units with enough tolerance
+				if (planets[i].tolerance[player] > 0) {
+					res.add(planets[i]);
+					}
+				// add neighbourgs with enough tolerance
+				for (int j = 0; j < planets[i].adj.length; j++) {
+					Planet p = planets[i].adj[j];
+					if (p.tolerance[player] > 0) {
 						res.add(p);
 					}
 				}
