@@ -51,16 +51,16 @@ public class utg17State implements GameState {
 	@Override
 	public void init() {
 		s=new Player.State();
-		s.nbP=5+rnd.nextInt(6);
-		int player0=rnd.nextInt(s.nbP);
-		int player1;
-		do { player1=rnd.nextInt(s.nbP);} while(player1==player0);
+		s.nbP=10+rnd.nextInt(20);
+		int InitPlanetPlayer0=rnd.nextInt(s.nbP);
+		int InitPlanetPlayer1;
+		do { InitPlanetPlayer1=rnd.nextInt(s.nbP);} while(InitPlanetPlayer1==InitPlanetPlayer0);
 		s.planets=new Player.Planet[s.nbP];
 		for(int i=0;i<s.nbP;++i) s.planets[i]=new Player.Planet(i); 
-		s.planets[player0].unit[0]=5;
-		s.planets[player1].unit[1]=5;
-		s.planets[player0].tolerance[0]=4;
-		s.planets[player1].tolerance[1]=4;
+		s.planets[InitPlanetPlayer0].unit[0]=5;
+		s.planets[InitPlanetPlayer1].unit[1]=5;
+		s.planets[InitPlanetPlayer0].tolerance[0]=4;
+		s.planets[InitPlanetPlayer1].tolerance[1]=4;
 		int nbE=0,nbEmpty=s.nbP,floorE =(int)(s.nbP*2.5);
 		HashSet<Edge> ed=new HashSet<>();
 		ArrayList<ArrayList<Player.Planet>> adj = new ArrayList<ArrayList<Player.Planet>>(s.nbP);

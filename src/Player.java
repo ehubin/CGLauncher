@@ -17,7 +17,7 @@ class Player {
 		State st = new State();
 		
 		st.readEdges(in);
-    System.err.println("Nb of planets " + st.nbP);
+		System.err.println("Nb of planets " + st.nbP);
 
 		// game loop
 		while (true) {
@@ -232,8 +232,8 @@ class Player {
 			}
 
 			Random rnd = new Random();
-			// 50% chance do a spread
-			if (rnd.nextInt(1) > 0) {
+			// 66% chance do a spread
+			if (rnd.nextInt(3) > 0) {
 				// select randomly one candidate
 				int choice = rnd.nextInt(candidate.size());
 				Planet[] array = candidate.toArray(new Planet[candidate.size()]);
@@ -416,7 +416,7 @@ class Player {
 				nbtentative++;
 				////System.err.println("chosen score");
 			} while (System.nanoTime()-start < time);
-			System.err.println("Nb Tentatives: " + nbtentative);
+			System.err.println("Nb iter MC: " + nbtentative);
 			int  max=Integer.MIN_VALUE;
 			Action best=null;
 			for(Action p:possible) {
