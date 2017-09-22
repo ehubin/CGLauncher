@@ -232,9 +232,12 @@ class Player {
 			}
 
 			Random rnd = new Random();
-			int choice = rnd.nextInt(candidate.size());
+			// 50% chance do a spread
 			if (rnd.nextInt(1) > 0) {
-				return choice;
+				// select randomly one candidate
+				int choice = rnd.nextInt(candidate.size());
+				Planet[] array = candidate.toArray(new Planet[candidate.size()]);
+				return array[choice].idx;
 			}
 			
 			return -1;
@@ -318,8 +321,12 @@ class Player {
 		
 		Action() {};
 		Action(Scanner s) {
+			System.err.println("target.length = "+target.length);
 			for (int i = 0; i < target.length; ++i)
+			{
 				target[i] = s.nextInt();
+				System.err.println("target["+i+"] = "+target[i]);
+			}
 			String spread = s.next();
 			if (spread.equals("NONE"))
 				spreadPlanet = -1;

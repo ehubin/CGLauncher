@@ -123,7 +123,14 @@ public class utg17State implements GameState {
 
 	@Override
 	public int resolveActions() {
+<<<<<<< HEAD
 		s.apply(actions[0],actions[1]);
+=======
+		System.err.println("turn:"+s.turn);
+		System.err.println("actions.length:"+actions.length);
+		System.err.println("actions[s.turn]:"+actions[s.turn]);
+		s.apply(actions[s.turn],actions[s.turn+1]);
+>>>>>>> branch 'master' of https://github.com/ehubin/CGLauncher
 		return 0;
 	}
 
