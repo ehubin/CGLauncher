@@ -19,7 +19,9 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
 import org.graphstream.graph.Graph;
+import org.graphstream.graph.Node;
 import org.graphstream.graph.implementations.MultiGraph;
+import org.graphstream.ui.swingViewer.ViewPanel;
 import org.graphstream.ui.view.View;
 import org.graphstream.ui.view.Viewer;
 
@@ -49,7 +51,7 @@ public class utg17State implements GameState {
 	@Override
 	public void init() {
 		s=new Player.State();
-		s.nbP=50+rnd.nextInt(101);
+		s.nbP=5+rnd.nextInt(6);
 		int player0=rnd.nextInt(s.nbP);
 		int player1;
 		do { player1=rnd.nextInt(s.nbP);} while(player1==player0);
@@ -140,6 +142,8 @@ public class utg17State implements GameState {
 	public static class ui extends GameUI<utg17State> {
 		BufferedImage ship;
 		JTextArea console;
+		Graph g=new MultiGraph("embedded");
+		Container c;
 		
 		ui(Referee<utg17State> s, String title) { 
 			super(s,title);
@@ -151,7 +155,7 @@ public class utg17State implements GameState {
 		}
 		@Override
 		public void initUI() {
-			Container c= getContentPane();
+			c= getContentPane();
 			c.setLayout(new BorderLayout());
 			c.add(getGamePanelWithControls(new Dimension(800,450),new Dimension(16000,9000)),BorderLayout.CENTER);
 			console=new JTextArea(100,60);
@@ -159,16 +163,10 @@ public class utg17State implements GameState {
 			sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			sp.setPreferredSize(new Dimension(console.getPreferredSize().width+20,450));
 			c.add(sp, BorderLayout.EAST);
-			Graph graph = new MultiGraph("embedded");
-			graph.addNode("toto");
-			graph.addNode("totu");
-			graph.addNode("tata");
-			graph.addEdge("", "toto", "tata");
-			Viewer viewer = new Viewer(graph, Viewer.ThreadingModel.GRAPH_IN_ANOTHER_THREAD);
-			// ...
-			View view = viewer.addDefaultView(false);   // false indicates "no JFrame".
-			// ...
-			c.add(viewer.getDefaultView(),BorderLayout.CENTER);
+			
+			
+			
+			
 			if(referee != null) {
 				buttonPanel.add(new JButton(new AbstractAction("Reset") {
 
@@ -184,9 +182,31 @@ public class utg17State implements GameState {
 				}));
 			}
 		}
-
+		
+		void initGraph() {
+			if(currentState.s==null||g.getEdgeCount() == currentState.s.nbE) return;
+			
+			Node n;
+			for(Player.Planet p:currentState.s.planets) {
+				n=g.addNode(p.idx+"");
+				n.addAttribute("ui.label", p.idx+"");
+			}
+			int[][] l = currentState.s.edges;
+			for(int i=0;i<l.length;++i) {
+				org.graphstream.graph.Edge e=g.addEdge(l[i][0]+"_"+l[i][1], l[i][0]+"", l[i][1]+"");
+				System.err.println("Added "+e);
+			}
+			Viewer viewer = new Viewer(g, Viewer.ThreadingModel.GRAPH_IN_GUI_THREAD);
+			viewer.enableAutoLayout();
+			ViewPanel view = viewer.addDefaultView(false);   // false indicates "no JFrame".
+			view.setPreferredSize(new Dimension (600,600));
+			
+			c.add(view,BorderLayout.WEST);
+			System.err.println("graph init done");
+		}
 		@Override
 		void draw(Graphics2D g) {
+			initGraph();
 			Color[] pcolors= {Color.BLACK,Color.RED};
 			Player.State s =currentState.s;
 			
